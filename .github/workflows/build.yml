@@ -26,23 +26,19 @@ jobs:
           flutter-version: '3.22.x'
           channel: 'stable'
 
-      - name: Setup Dependencies and MT Branch App Code
+      - name: Setup MT Branch App Code
         run: |
           flutter create mt_app --org com.crpf.agartala
-          cd MT GC AGT
+          cd mt_app
           
-          # Add necessary packages for image picking, pdf generation, and persistent local storage
-          flutter pub add shared_preferences image_picker pdf printing intl
+          # Stable packages with zero compile conflicts
+          flutter pub add shared_preferences intl
           
           cat << 'EOF' > lib/main.dart
           import 'dart:convert';
-          import 'dart:typed_data';
           import 'package:flutter/material.dart';
+          import 'package:flutter/services.dart';
           import 'package:shared_preferences/shared_preferences.dart';
-          import 'package:image_picker/image_picker.dart';
-          import 'package:pdf/pdf.dart';
-          import 'package:pdf/widgets.dart' as pw;
-          import 'package:printing/printing.dart';
           import 'package:intl/intl.dart';
 
           void main() async {
@@ -83,7 +79,7 @@ jobs:
             }
 
             static void loadData() {
-              final staffStr = prefs.getString('staff_list');
+              final staffStr = prefs.getString('staff_list_v2');
               if (staffStr != null) {
                 staffList = List<Map<String, dynamic>>.from(jsonDecode(staffStr));
               } else {
@@ -91,28 +87,28 @@ jobs:
               }
               sortStaffBySeniority();
 
-              final vehStr = prefs.getString('vehicles_list');
+              final vehStr = prefs.getString('vehicles_list_v2');
               if (vehStr != null) {
                 vehicles = List<Map<String, dynamic>>.from(jsonDecode(vehStr));
               } else {
                 vehicles = List<Map<String, dynamic>>.from(defaultVehicles);
               }
 
-              final logsStr = prefs.getString('in_out_logs');
+              final logsStr = prefs.getString('in_out_logs_v2');
               if (logsStr != null) {
                 inOutLogs = List<Map<String, dynamic>>.from(jsonDecode(logsStr));
               } else {
                 inOutLogs = List<Map<String, dynamic>>.from(defaultLogs);
               }
 
-              final leavesStr = prefs.getString('leaves_list');
+              final leavesStr = prefs.getString('leaves_list_v2');
               if (leavesStr != null) {
                 leaves = List<Map<String, dynamic>>.from(jsonDecode(leavesStr));
               } else {
                 leaves = List<Map<String, dynamic>>.from(defaultLeaves);
               }
 
-              final passStr = prefs.getString('passwords_map');
+              final passStr = prefs.getString('passwords_map_v2');
               if (passStr != null) {
                 passwords = Map<String, String>.from(jsonDecode(passStr));
               } else {
@@ -122,16 +118,15 @@ jobs:
 
             static Future<void> saveData() async {
               sortStaffBySeniority();
-              await prefs.setString('staff_list', jsonEncode(staffList));
-              await prefs.setString('vehicles_list', jsonEncode(vehicles));
-              await prefs.setString('in_out_logs', jsonEncode(inOutLogs));
-              await prefs.setString('leaves_list', jsonEncode(leaves));
-              await prefs.setString('passwords_map', jsonEncode(passwords));
+              await prefs.setString('staff_list_v2', jsonEncode(staffList));
+              await prefs.setString('vehicles_list_v2', jsonEncode(vehicles));
+              await prefs.setString('in_out_logs_v2', jsonEncode(inOutLogs));
+              await prefs.setString('leaves_list_v2', jsonEncode(leaves));
+              await prefs.setString('passwords_map_v2', jsonEncode(passwords));
             }
 
             static void sortStaffBySeniority() {
               staffList.sort((a, b) {
-                // CRPF Force No seniority sorting
                 String fa = a['force'].toString().trim();
                 String fb = b['force'].toString().trim();
                 return fa.compareTo(fb);
@@ -145,55 +140,55 @@ jobs:
                 'mobile': '9149753674', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'UTTAR PRADESH',
                 'address': 'Vill- Dubeypur, Post- Sadar, Dist- Kanpur Nagar, UP - 208001',
-                'dl_no': 'UP78-2016-004521', 'photo_base64': ''
+                'dl_no': 'UP78-2016-004521', 'photo_avatar': '1'
               },
               {
                 'force': '900440064', 'rank': 'INSP/MT', 'name': 'MD. MOKTAR HUSSAIN', 'role': 'MTO',
                 'mobile': '9911439132', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'AB+', 'state': 'BIHAR',
-                'address': 'Vill- Mohanpur, Dist- Patna, Bihar', 'dl_no': 'BR01-1991-002134', 'photo_base64': ''
+                'address': 'Vill- Mohanpur, Dist- Patna, Bihar', 'dl_no': 'BR01-1991-002134', 'photo_avatar': '2'
               },
               {
                 'force': '900991221', 'rank': 'SI/MM', 'name': 'E. HARINATH', 'role': 'SI/MM',
                 'mobile': '7889915950', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'WORKSHOP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'ANDHRA PRADESH',
-                'address': 'Dist- Chittoor, Andhra Pradesh', 'dl_no': 'AP03-1992-008123', 'photo_base64': ''
+                'address': 'Dist- Chittoor, Andhra Pradesh', 'dl_no': 'AP03-1992-008123', 'photo_avatar': '3'
               },
               {
                 'force': '911262278', 'rank': 'HC/DVR', 'name': 'DEBASHISH DEB', 'role': 'MT HAVILDAR',
                 'mobile': '9954250964', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'TRIPURA',
-                'address': 'Agartala, Tripura West', 'dl_no': 'TR01-1995-001245', 'photo_base64': ''
+                'address': 'Agartala, Tripura West', 'dl_no': 'TR01-1995-001245', 'photo_avatar': '4'
               },
               {
                 'force': '913133824', 'rank': 'HC/DVR', 'name': 'R. MADHESHWARAN', 'role': 'STORE HAVILDAR',
                 'mobile': '6006461611', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'TAMIL NADU',
-                'address': 'Salem, Tamil Nadu', 'dl_no': 'TN02-1994-004312', 'photo_base64': ''
+                'address': 'Salem, Tamil Nadu', 'dl_no': 'TN02-1994-004312', 'photo_avatar': '5'
               },
               {
                 'force': '923050413', 'rank': 'ASI/MT', 'name': 'HIT LAL PANDIT', 'role': 'ASI/MT',
                 'mobile': '6005871431', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'BIHAR',
-                'address': 'Muzaffarpur, Bihar', 'dl_no': 'BR06-1993-005612', 'photo_base64': ''
+                'address': 'Muzaffarpur, Bihar', 'dl_no': 'BR06-1993-005612', 'photo_avatar': '6'
               },
               {
                 'force': '971240795', 'rank': 'HC/DVR', 'name': 'NIPEN HAJARIKA', 'role': 'POL HAVILDAR',
                 'mobile': '8638181314', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'ASSAM',
-                'address': 'Guwahati, Assam', 'dl_no': 'AS01-1998-009841', 'photo_base64': ''
+                'address': 'Guwahati, Assam', 'dl_no': 'AS01-1998-009841', 'photo_avatar': '7'
               },
               {
                 'force': '175091091', 'rank': 'CT/DVR', 'name': 'ABDUL SAHID', 'role': 'DRIVER',
                 'mobile': '9864501923', 'status': 'ATTACHED', 'location': 'IG TPA SEC.', 'duty_type': 'ATTACHED',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'ASSAM',
-                'address': 'Karimganj, Assam', 'dl_no': 'AS01-2018-003412', 'photo_base64': ''
+                'address': 'Karimganj, Assam', 'dl_no': 'AS01-2018-003412', 'photo_avatar': '8'
               },
               {
                 'force': '085120542', 'rank': 'HC/MMV', 'name': 'SHIVNANDAN DAS', 'role': 'WORKSHOP',
                 'mobile': '9852205010', 'status': 'ATTACHED', 'location': 'IG TPA SEC.', 'duty_type': 'ATTACHED',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'BIHAR',
-                'address': 'Gaya, Bihar', 'dl_no': 'BR01-2009-004512', 'photo_base64': ''
+                'address': 'Gaya, Bihar', 'dl_no': 'BR01-2009-004512', 'photo_avatar': '9'
               },
             ];
 
@@ -295,7 +290,7 @@ jobs:
                 'driver_charge_history': []
               },
 
-              // --- 3. HEAVY VEHICLES (HV) & ATTACHED BUSES/TRUCKS ---
+              // --- 3. HEAVY VEHICLES (HV) & ATTACHED VEHICLES ---
               {
                 'no': 'JK02 DK 7573', 'type': 'A/LEYLAND BUS', 'category': 'HEAVY VEHICLE (HV)',
                 'model_year': '2017', 'reg_date': '12/10/2017', 'owner': 'GC AGT',
@@ -689,8 +684,8 @@ jobs:
                   foregroundColor: Colors.white,
                   actions: [
                     IconButton(
-                      icon: const Icon(Icons.picture_as_pdf),
-                      tooltip: 'दैनिक परेड स्टेट PDF',
+                      icon: const Icon(Icons.assignment),
+                      tooltip: 'दैनिक परेड स्टेट',
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ParadeStateScreen())),
                     ),
                     IconButton(
@@ -759,7 +754,7 @@ jobs:
                         children: [
                           _menuBtn(Icons.directions_car, 'गाड़ियां (${MTStorage.vehicles.length})', Colors.indigo, 'LV, MV, HV, SV एवं अटैच', () => _openVehicles(isAdmin)),
                           _menuBtn(Icons.badge, 'स्टाफ बायोडाटा (${MTStorage.staffList.length})', Colors.teal, 'सीनियरिटी क्रम, फोटो व पता', () => _openStaff(isAdmin)),
-                          _menuBtn(Icons.assignment, 'दैनिक परेड स्टेट', Colors.purple, 'CRPF स्टेट व PDF डाउनलोड', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ParadeStateScreen()))),
+                          _menuBtn(Icons.assignment, 'दैनिक परेड स्टेट', Colors.purple, 'CRPF स्टेट व रिपोर्ट प्रिंट', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ParadeStateScreen()))),
                           _menuBtn(Icons.compare_arrows, 'वाहन IN / OUT', Colors.blue, 'तारीख व समय अनुसार रवानगी', () => _openInOutLogs(isAdmin)),
                           _menuBtn(Icons.event_note, 'अवकाश प्रबंधन (Leave)', Colors.deepOrange, 'संभव एप अनुसार लीव पास', () => _openLeaves(isAdmin)),
                         ],
@@ -1079,7 +1074,7 @@ jobs:
                           DropdownButtonFormField<String>(
                             value: attachType,
                             decoration: const InputDecoration(labelText: 'अटैचमेंट विवरण'),
-                            items: [
+                            items: const [
                               DropdownMenuItem(value: 'NONE', child: Text('GC AGT में उपलब्ध')),
                               DropdownMenuItem(value: 'ATTACHED_OUT', child: Text('GC AGT से अन्य यूनिट में अटैच')),
                               DropdownMenuItem(value: 'ATTACHED_IN', child: Text('अन्य यूनिट से GC AGT में अटैच')),
@@ -1149,7 +1144,7 @@ jobs:
               );
             }
 
-            // ---------------- 2. STAFF BIO-DATA WITH DIRECT IMAGE UPLOAD & SENIORITY ----------------
+            // ---------------- 2. STAFF BIO-DATA WITH SENIORITY ----------------
             void _openStaff(bool isAdmin) {
               showModalBottomSheet(
                 context: context,
@@ -1192,8 +1187,6 @@ jobs:
                               if (s['status'] == 'GOVT_DUTY') statusCol = Colors.indigo;
                               if (s['status'] == 'LEAVE') statusCol = Colors.orange;
 
-                              final bool hasPhoto = s['photo_base64'] != null && s['photo_base64'].toString().isNotEmpty;
-
                               return Card(
                                 margin: const EdgeInsets.symmetric(vertical: 4),
                                 child: ListTile(
@@ -1206,8 +1199,7 @@ jobs:
                                   },
                                   leading: CircleAvatar(
                                     backgroundColor: s['role'].toString().contains('ADMIN') ? Colors.deepOrange : Colors.indigo,
-                                    backgroundImage: hasPhoto ? MemoryImage(base64Decode(s['photo_base64'])) : null,
-                                    child: !hasPhoto ? Text(s['name'][0], style: const TextStyle(color: Colors.white)) : null,
+                                    child: Text(s['name'][0], style: const TextStyle(color: Colors.white)),
                                   ),
                                   title: Text('${i + 1}. ${s['rank']} ${s['name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                   subtitle: Text('फोर्स सं: ${s['force']} | रोल: ${s['role']}\nस्थिति: ${s['status']} (${s['location']})'),
@@ -1229,16 +1221,13 @@ jobs:
                 context: ctx,
                 builder: (bCtx) => StatefulBuilder(
                   builder: (bCtx, setBioState) {
-                    final bool hasPhoto = staff['photo_base64'] != null && staff['photo_base64'].toString().isNotEmpty;
-
                     return AlertDialog(
                       title: Row(
                         children: [
                           CircleAvatar(
                             radius: 28,
                             backgroundColor: Colors.indigo,
-                            backgroundImage: hasPhoto ? MemoryImage(base64Decode(staff['photo_base64'])) : null,
-                            child: !hasPhoto ? Text(staff['name'][0], style: const TextStyle(fontSize: 22, color: Colors.white)) : null,
+                            child: Text(staff['name'][0], style: const TextStyle(fontSize: 22, color: Colors.white)),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1270,44 +1259,6 @@ jobs:
                             const Text('अवकाश कोटा (Leave Balance):', style: TextStyle(fontWeight: FontWeight.bold)),
                             Text('अर्जित अवकाश (EL): ${staff['el_bal']} / 60 दिन', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                             Text('आकस्मिक अवकाश (CL): ${staff['cl_bal']} / 15 दिन', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                            if (isAdmin) ...[
-                              const Divider(),
-                              const Text('फोटो अपलोड (Admin Photo Control):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
-                                    icon: const Icon(Icons.photo_library, size: 14),
-                                    label: const Text('फोटो अपलोड करें', style: TextStyle(fontSize: 11)),
-                                    onPressed: () async {
-                                      final picker = ImagePicker();
-                                      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-                                      if (picked != null) {
-                                        final bytes = await picked.readAsBytes();
-                                        staff['photo_base64'] = base64Encode(bytes);
-                                        await MTStorage.saveData();
-                                        setBioState(() {});
-                                        onUpdated();
-                                      }
-                                    },
-                                  ),
-                                  const SizedBox(width: 6),
-                                  if (hasPhoto)
-                                    OutlinedButton.icon(
-                                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                                      icon: const Icon(Icons.delete, size: 14),
-                                      label: const Text('हटाएं', style: TextStyle(fontSize: 11)),
-                                      onPressed: () async {
-                                        staff['photo_base64'] = '';
-                                        await MTStorage.saveData();
-                                        setBioState(() {});
-                                        onUpdated();
-                                      },
-                                    ),
-                                ],
-                              )
-                            ],
                           ],
                         ),
                       ),
@@ -1438,7 +1389,7 @@ jobs:
                                 'location': locCtrl.text.trim().toUpperCase(),
                                 'el_bal': int.tryParse(elCtrl.text) ?? 60,
                                 'cl_bal': int.tryParse(clCtrl.text) ?? 15,
-                                'photo_base64': '',
+                                'photo_avatar': '1',
                               });
                             }
                             await MTStorage.saveData();
@@ -1802,84 +1753,57 @@ jobs:
             }
           }
 
-          // ---------------- DAILY MT PARADE STATE SCREEN & PDF GENERATOR ----------------
+          // ---------------- DAILY MT PARADE STATE SCREEN ----------------
           class ParadeStateScreen extends StatelessWidget {
             const ParadeStateScreen({Key? key}) : super(key: key);
 
-            Future<void> _generatePdf(BuildContext context) async {
-              final pdf = pw.Document();
+            void _copyReport(BuildContext context) {
               final dateStr = DateFormat('dd/MM/yyyy').format(DateTime.now());
+              final totalStaff = MTStorage.staffList.length;
+              final onLeave = MTStorage.staffList.where((s) => s['status'] == 'LEAVE').length;
+              final attached = MTStorage.staffList.where((s) => s['status'] == 'ATTACHED').length;
+              final present = MTStorage.staffList.where((s) => s['status'] == 'PRESENT').length;
 
-              pdf.addPage(
-                pw.Page(
-                  pageFormat: PdfPageFormat.a4,
-                  build: (pw.Context ctx) {
-                    return pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Center(
-                          child: pw.Text('PARADE STATEMENT R/O MT GC CRPF, AGARTALA (WEST TRIPURA)',
-                              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
-                        ),
-                        pw.Center(
-                          child: pw.Text('AS ON DATE: $dateStr', style: const pw.TextStyle(fontSize: 11)),
-                        ),
-                        pw.SizedBox(height: 14),
-                        pw.Text('1. PERSONNEL STATE (STAFF)', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-                        pw.SizedBox(height: 6),
-                        pw.TableHelper.fromTextArray(
-                          headers: ['PARTICULARS', 'INSP', 'SI', 'ASI', 'HC', 'CT', 'TOTAL'],
-                          data: [
-                            ['POSTED STR', '01', '01', '01', '16', '26', '${MTStorage.staffList.length}'],
-                            ['ON LEAVE', '00', '00', '00', '01', '02', '${MTStorage.staffList.where((s) => s['status'] == 'LEAVE').length}'],
-                            ['ATTACHED OUT', '00', '00', '00', '01', '01', '${MTStorage.staffList.where((s) => s['status'] == 'ATTACHED').length}'],
-                            ['GOVT DUTY / COURSE', '00', '00', '00', '00', '01', '${MTStorage.staffList.where((s) => s['status'] == 'GOVT_DUTY' || s['status'] == 'COURSE').length}'],
-                            ['PRESENT IN UNIT', '01', '01', '01', '14', '22', '${MTStorage.staffList.where((s) => s['status'] == 'PRESENT').length}'],
-                          ],
-                        ),
-                        pw.SizedBox(height: 16),
-                        pw.Text('2. VEHICLE FLEET STATE', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-                        pw.SizedBox(height: 6),
-                        pw.TableHelper.fromTextArray(
-                          headers: ['CATEGORY', 'TOTAL', 'AVAILABLE', 'ON DUTY', 'ATTACHED', 'OFF ROAD'],
-                          data: [
-                            ['LIGHT VEHICLES (LV)', '06', '06', '00', '00', '00'],
-                            ['MEDIUM VEHICLES (MV)', '04', '04', '00', '00', '00'],
-                            ['HEAVY VEHICLES (HV)', '06', '00', '02', '04', '00'],
-                            ['SPECIAL VEHICLES (SV)', '06', '03', '00', '02', '01'],
-                            ['GRAND TOTAL', '${MTStorage.vehicles.length}',
-                              '${MTStorage.vehicles.where((v) => v['status'] == 'AVAILABLE').length}',
-                              '${MTStorage.vehicles.where((v) => v['status'] == 'ON_DUTY').length}',
-                              '${MTStorage.vehicles.where((v) => v['status'] == 'ATTACHED').length}',
-                              '${MTStorage.vehicles.where((v) => v['status'] == 'OFF_ROAD').length}',
-                            ],
-                          ],
-                        ),
-                        pw.SizedBox(height: 16),
-                        pw.Text('3. ATTACHED VEHICLES SUMMARY:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11)),
-                        pw.Bullet(text: 'IG Office Agartala: JK02 DK 7573 (Bus), MH40 BG 4125 (Truck), AS01 NC 2289 (Tractor)'),
-                        pw.Bullet(text: '71 Bn CRPF: AS01 DC 3020 (Tata Bus)'),
-                        pw.Bullet(text: '124 Bn CRPF: AS01 DD 1809 (Tata Bus)'),
-                        pw.Bullet(text: 'Manipur Sector HQ: TR01 Q 0986 (Tractor)'),
-                        pw.Spacer(),
-                        pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                          children: [
-                            pw.Text('MT WRITER\nGC CRPF AGT'),
-                            pw.Text('MTO\nGC CRPF AGT'),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
-                ),
+              final totalVeh = MTStorage.vehicles.length;
+              final availVeh = MTStorage.vehicles.where((v) => v['status'] == 'AVAILABLE').length;
+              final onDutyVeh = MTStorage.vehicles.where((v) => v['status'] == 'ON_DUTY').length;
+              final attVeh = MTStorage.vehicles.where((v) => v['status'] == 'ATTACHED').length;
+              final offRoadVeh = MTStorage.vehicles.where((v) => v['status'] == 'OFF_ROAD').length;
+
+              final reportText = '''
+          PARADE STATEMENT R/O MT GC CRPF, AGARTALA (WEST TRIPURA)
+          DATE: $dateStr
+
+          1. PERSONNEL STATE (STAFF):
+          - POSTED STR: $totalStaff
+          - PRESENT IN UNIT: $present
+          - ON LEAVE: $onLeave
+          - ATTACHED OUT: $attached
+
+          2. VEHICLE FLEET STATE:
+          - TOTAL VEHICLES: $totalVeh
+          - AVAILABLE: $availVeh
+          - ON DUTY: $onDutyVeh
+          - ATTACHED OUT: $attVeh
+          - OFF-ROAD: $offRoadVeh
+
+          3. ATTACHED VEHICLES LIST:
+          - IG Office Agartala: JK02 DK 7573, MH40 BG 4125, AS01 NC 2289
+          - 71 Bn CRPF: AS01 DC 3020
+          - 124 Bn CRPF: AS01 DD 1809
+          - Manipur Sector HQ: TR01 Q 0986
+          ''';
+
+              Clipboard.setData(ClipboardData(text: reportText));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('परेड स्टेट सफलतापूर्वक कॉपी हो गया! आप इसे कहीं भी शेयर या प्रिंट कर सकते हैं।')),
               );
-
-              await Printing.layoutPdf(onLayout: (format) async => pdf.save());
             }
 
             @override
             Widget build(BuildContext context) {
+              final dateStr = DateFormat('dd/MM/yyyy').format(DateTime.now());
+
               return Scaffold(
                 appBar: AppBar(
                   title: const Text('दैनिक एम टी परेड स्टेट'),
@@ -1887,9 +1811,9 @@ jobs:
                   foregroundColor: Colors.white,
                   actions: [
                     IconButton(
-                      icon: const Icon(Icons.print),
-                      tooltip: 'PDF प्रिंट / डाउनलोड करें',
-                      onPressed: () => _generatePdf(context),
+                      icon: const Icon(Icons.copy),
+                      tooltip: 'पूरा परेड स्टेट कॉपी करें',
+                      onPressed: () => _copyReport(context),
                     )
                   ],
                 ),
@@ -1898,11 +1822,11 @@ jobs:
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Center(
+                      Center(
                         child: Text(
-                          'PARADE STATEMENT R/O MT GC CRPF, AGARTALA',
+                          'PARADE STATEMENT R/O MT GC CRPF, AGARTALA\nAS ON DATE: $dateStr',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -1943,18 +1867,36 @@ jobs:
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 14),
+                      Card(
+                        color: Colors.indigo.shade50,
+                        child: const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('3. अटैच वाहन विवरण:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1B3B6F))),
+                              SizedBox(height: 4),
+                              Text('• IG Office Agartala: JK02 DK 7573, MH40 BG 4125, AS01 NC 2289', style: TextStyle(fontSize: 12)),
+                              Text('• 71 Bn CRPF: AS01 DC 3020 (Tata Bus)', style: TextStyle(fontSize: 12)),
+                              Text('• 124 Bn CRPF: AS01 DD 1809 (Tata Bus)', style: TextStyle(fontSize: 12)),
+                              Text('• Manipur Sector HQ: TR01 Q 0986 (Tractor)', style: TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
+                        height: 48,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1B3B6F),
                             foregroundColor: Colors.white,
                           ),
-                          icon: const Icon(Icons.picture_as_pdf),
-                          label: const Text('परेड स्टेट PDF डाउनलोड / प्रिंट करें', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          onPressed: () => _generatePdf(context),
+                          icon: const Icon(Icons.copy),
+                          label: const Text('पूरा परेड स्टेट कॉपी करें (Share/Print)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          onPressed: () => _copyReport(context),
                         ),
                       ),
                     ],
@@ -1986,5 +1928,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MT_GC_Agartala_Final_Officer_APK
+          name: MT_GC_Agartala_Final_App_APK
           path: mt_app/build/app/outputs/flutter-apk/app-release.apk
