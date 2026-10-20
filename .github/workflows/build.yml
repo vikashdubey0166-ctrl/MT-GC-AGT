@@ -1,4 +1,4 @@
-name: Build APK
+name: Build MT Agartala APK
 
 on:
   push:
@@ -26,14 +26,376 @@ jobs:
           flutter-version: '3.22.x'
           channel: 'stable'
 
-      - name: Create App Automatically
+      - name: Setup MT Branch App Code
         run: |
           flutter create mt_app --org com.crpf.agartala
           cd mt_app
-          flutter build apk --release
+          cat << 'EOF' > lib/main.dart
+          import 'package:flutter/material.dart';
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: MT_Branch_Agartala_APK
-          path: mt_app/build/app/outputs/flutter-apk/app-release.apk
+          void main() {
+            runApp(const MTBranchApp());
+          }
+
+          class MTBranchApp extends StatelessWidget {
+            const MTBranchApp({Key? key}) : super(key: key);
+
+            @override
+            Widget build(BuildContext context) {
+              return MaterialApp(
+                title: 'एम टी शाखा GC अगरतला',
+                theme: ThemeData(
+                  colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B3B6F)),
+                  useMaterial3: true,
+                ),
+                home: const LoginScreen(),
+                debugShowCheckedModeBanner: false,
+              );
+            }
+          }
+
+          class LoginScreen extends StatefulWidget {
+            const LoginScreen({Key? key}) : super(key: key);
+
+            @override
+            State<LoginScreen> createState() => _LoginScreenState();
+          }
+
+          class _LoginScreenState extends State<LoginScreen> {
+            final _forceNoCtrl = TextEditingController();
+            final _passwordCtrl = TextEditingController();
+            bool _obscureText = true;
+
+            final Map<String, Map<String, dynamic>> _credentials = {
+              'ADMIN001': {
+                'password': 'Agartala@123',
+                'name': 'MTO GC Agartala',
+                'rank': 'Inspector / MTO',
+                'role': 'ADMIN',
+                'status': 'PRESENT'
+              },
+              'CLK001': {
+                'password': 'Agartala@123',
+                'name': 'Rakesh Sharma',
+                'rank': 'HC/GD (MT Clerk)',
+                'role': 'CLERK',
+                'status': 'PRESENT'
+              },
+              'DRV001': {
+                'password': 'Driver@123',
+                'name': 'Vikash Dubey',
+                'rank': 'CT/GD (Driver)',
+                'role': 'DRIVER',
+                'status': 'PRESENT'
+              },
+            };
+
+            void _handleLogin() {
+              final forceNo = _forceNoCtrl.text.trim().toUpperCase();
+              final password = _passwordCtrl.text.trim();
+
+              if (_credentials.containsKey(forceNo)) {
+                final user = _credentials[forceNo]!;
+                if (user['password'] == password) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DashboardScreen(
+                        forceNo: forceNo,
+                        userName: user['name']!,
+                        rank: user['rank']!,
+                        role: user['role']!,
+                        status: user['status']!,
+                      ),
+                    ),
+                  );
+                  return;
+                }
+              }
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('गलत फोर्स नंबर या पासवर्ड!')),
+              );
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                backgroundColor: const Color(0xFFF0F4F8),
+                body: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(18),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF1B3B6F),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.directions_bus_filled, size: 60, color: Colors.white),
+                        ),
+                        const SizedBox(height: 18),
+                        const Text(
+                          'एम टी शाखा समूह केंद्र अगरतला',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B3B6F)),
+                        ),
+                        const Text('वाहन, डिजिटल लॉग बुक एवं स्टाफ रिकॉर्ड', style: TextStyle(color: Colors.grey)),
+                        const SizedBox(height: 28),
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              children: [
+                                TextField(
+                                  controller: _forceNoCtrl,
+                                  decoration: const InputDecoration(
+                                    labelText: 'फोर्स नंबर (User ID)',
+                                    prefixIcon: Icon(Icons.person),
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                TextField(
+                                  controller: _passwordCtrl,
+                                  obscureText: _obscureText,
+                                  decoration: InputDecoration(
+                                    labelText: 'पासवर्ड',
+                                    prefixIcon: const Icon(Icons.lock),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(_obscureText ? Icons.visibility_off : Icons.visibility),
+                                      onPressed: () => setState(() => _obscureText = !_obscureText),
+                                    ),
+                                    border: const OutlineInputBorder(),
+                                  ),
+                                ),
+                                const SizedBox(height: 22),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 48,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1B3B6F),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: _handleLogin,
+                                    child: const Text('लॉग इन करें', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(10.0),
+                            child: Text(
+                              'लॉगिन:\nएडमिन: ADMIN001 / Agartala@123\nड्राइवर: DRV001 / Driver@123',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: Colors.black87),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+          }
+
+          class DashboardScreen extends StatefulWidget {
+            final String forceNo;
+            final String userName;
+            final String rank;
+            final String role;
+            final String status;
+
+            const DashboardScreen({
+              Key? key,
+              required this.forceNo,
+              required this.userName,
+              required this.rank,
+              required this.role,
+              required this.status,
+            }) : super(key: key);
+
+            @override
+            State<DashboardScreen> createState() => _DashboardScreenState();
+          }
+
+          class _DashboardScreenState extends State<DashboardScreen> {
+            List<Map<String, dynamic>> vehicles = [
+              {'no': 'TR01-GC-1001', 'type': 'Gypsy', 'status': 'AVAILABLE', 'km': 45200},
+              {'no': 'TR01-GC-1002', 'type': 'Bus (52 Seater)', 'status': 'ON_DUTY', 'km': 78400},
+              {'no': 'TR01-GC-1003', 'type': 'Truck (Tata 407)', 'status': 'OFF_ROAD', 'km': 112000},
+              {'no': 'TR01-GC-1004', 'type': 'Ambulance', 'status': 'AVAILABLE', 'km': 28900},
+            ];
+
+            List<Map<String, dynamic>> trips = [
+              {'vehicle': 'TR01-GC-1002', 'driver': 'CT/GD Vikash Dubey', 'purpose': 'एयरपोर्ट पिकअप', 'status': 'ACTIVE', 'km': 78400},
+            ];
+
+            List<Map<String, dynamic>> leaves = [
+              {'name': 'CT/GD Rajesh Kumar', 'type': 'CL', 'days': 2, 'status': 'APPROVED', 'reason': 'घरेलू कार्य'},
+              {'name': 'CT/GD Sunil Singh', 'type': 'EL', 'days': 15, 'status': 'PENDING', 'reason': 'शादी'},
+            ];
+
+            List<Map<String, dynamic>> staffList = [
+              {'name': 'MTO GC Agartala', 'rank': 'Insp/MTO', 'force': 'ADMIN001', 'status': 'PRESENT'},
+              {'name': 'Rakesh Sharma', 'rank': 'HC/GD', 'force': 'CLK001', 'status': 'PRESENT'},
+              {'name': 'Vikash Dubey', 'rank': 'CT/GD', 'force': 'DRV001', 'status': 'ON_DUTY'},
+              {'name': 'Rajesh Kumar', 'rank': 'CT/GD', 'force': 'DRV002', 'status': 'LEAVE'},
+            ];
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                backgroundColor: const Color(0xFFF7F9FC),
+                appBar: AppBar(
+                  title: const Text('एम टी डैशबोर्ड'),
+                  backgroundColor: const Color(0xFF1B3B6F),
+                  foregroundColor: Colors.white,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.logout),
+                      onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                    ),
+                  ],
+                ),
+                body: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: const Color(0xFF1B3B6F),
+                            child: Text(widget.userName[0], style: const TextStyle(color: Colors.white)),
+                          ),
+                          title: Text('${widget.rank}${widget.userName}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('फोर्स सं: ${widget.forceNo} \vert{} रोल: ${widget.role}'),
+                          trailing: Chip(
+                            label: Text(widget.status),
+                            backgroundColor: Colors.green.shade100,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('एम टी स्थिति (MT Parade State)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _statCard('उपलब्ध गाड़ियां', '${vehicles.where((v) => v['status'] == 'AVAILABLE').length}', Colors.teal),
+                          _statCard('ऑन-ड्यूटी', '${vehicles.where((v) => v['status'] == 'ON_DUTY').length}', Colors.blue),
+                          _statCard('ऑफ-रोड', '${vehicles.where((v) => v['status'] == 'OFF_ROAD').length}', Colors.red),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _statCard('स्टाफ उपस्थित', '${staffList.where((s) => s['status'] == 'PRESENT' || s['status'] == 'ON_DUTY').length}', Colors.green),
+                          _statCard('अवकाश पर', '${staffList.where((s) => s['status'] == 'LEAVE').length}', Colors.orange),
+                          _statCard('कुल वाहन', '${vehicles.length}', Colors.indigo),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Text('सेवाएं एवं रिकॉर्ड्स', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.15,
+                        children: [
+                          _menuBtn(Icons.directions_car, 'गाड़ियों का रिकॉर्ड', Colors.indigo, () => _showVehiclesSheet()),
+                          _menuBtn(Icons.history_edu, 'डिजिटल लॉग बुक', Colors.blue, () => _showLogbookSheet()),
+                          _menuBtn(Icons.event_note, 'अवकाश प्रबंधन', Colors.deepOrange, () => _showLeavesSheet()),
+                          _menuBtn(Icons.people, 'स्टाफ रिकॉर्ड', Colors.teal, () => _showStaffSheet()),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            Widget _statCard(String t, String c, Color col) {
+              return Expanded(
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                    child: Column(
+                      children: [
+                        Text(c, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: col)),
+                        Text(t, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            Widget _menuBtn(IconData icon, String title, Color color, VoidCallback onTap) {
+              return InkWell(
+                onTap: onTap,
+                child: Card(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(icon, size: 32, color: color),
+                      const SizedBox(height: 8),
+                      Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            void _showVehiclesSheet() {
+              showModalBottomSheet(
+                context: context,
+                builder: (ctx) => ListView.builder(
+                  itemCount: vehicles.length,
+                  itemBuilder: (ctx, i) => ListTile(
+                    leading: const Icon(Icons.directions_car),
+                    title: Text('${vehicles[i]['no']} (${vehicles[i]['type']})'),
+                    subtitle: Text('मीटर: ${vehicles[i]['km']} KM'),
+                    trailing: Chip(label: Text(vehicles[i]['status'])),
+                  ),
+                ),
+              );
+            }
+
+            void _showLogbookSheet() {
+              showModalBottomSheet(
+                context: context,
+                builder: (ctx) => ListView.builder(
+                  itemCount: trips.length,
+                  itemBuilder: (ctx, i) => ListTile(
+                    title: Text('${trips[i]['vehicle']} -${trips[i]['purpose']}'),
+                    subtitle: Text('चालक: ${trips[i]['driver']}'),
+                    trailing: Chip(label: Text(trips[i]['status'])),
+                  ),
+                ),
+              );
+            }
+
+            void _showLeavesSheet() {
+              showModalBottomSheet(
+                context: context,
+                builder: (ctx) => ListView.builder(
+                  itemCount: leaves.length,
+                  itemBuilder: (ctx, i) => ListTile(
+                    title: Text('${leaves[i]['name']} (${leaves[i]['type']})'),
+                    subtitle: Text('अवधि: ${leaves[i]['days']} दिन \vert{} ${leaves[i]['reason']}'),
+                    trailing: Chip(label: Text(leaves
