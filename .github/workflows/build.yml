@@ -31,8 +31,8 @@ jobs:
           flutter create mt_app --org com.crpf.agartala
           cd mt_app
           
-          # Stable packages with zero compile conflicts
-          flutter pub add shared_preferences intl
+          # Stable Android dependencies
+          flutter pub add shared_preferences intl image_picker
           
           cat << 'EOF' > lib/main.dart
           import 'dart:convert';
@@ -40,6 +40,7 @@ jobs:
           import 'package:flutter/services.dart';
           import 'package:shared_preferences/shared_preferences.dart';
           import 'package:intl/intl.dart';
+          import 'package:image_picker/image_picker.dart';
 
           void main() async {
             WidgetsFlutterBinding.ensureInitialized();
@@ -64,7 +65,7 @@ jobs:
             }
           }
 
-          // ---------------- PERSISTENT LOCAL STORAGE (AUTO SAVE) ----------------
+          // ================= PERSISTENT LOCAL STORAGE (AUTO SAVE) =================
           class MTStorage {
             static late SharedPreferences prefs;
             static List<Map<String, dynamic>> staffList = [];
@@ -79,7 +80,7 @@ jobs:
             }
 
             static void loadData() {
-              final staffStr = prefs.getString('staff_list_v2');
+              final staffStr = prefs.getString('crpf_staff_master_v3');
               if (staffStr != null) {
                 staffList = List<Map<String, dynamic>>.from(jsonDecode(staffStr));
               } else {
@@ -87,28 +88,28 @@ jobs:
               }
               sortStaffBySeniority();
 
-              final vehStr = prefs.getString('vehicles_list_v2');
+              final vehStr = prefs.getString('crpf_veh_master_v3');
               if (vehStr != null) {
                 vehicles = List<Map<String, dynamic>>.from(jsonDecode(vehStr));
               } else {
                 vehicles = List<Map<String, dynamic>>.from(defaultVehicles);
               }
 
-              final logsStr = prefs.getString('in_out_logs_v2');
+              final logsStr = prefs.getString('crpf_inout_master_v3');
               if (logsStr != null) {
                 inOutLogs = List<Map<String, dynamic>>.from(jsonDecode(logsStr));
               } else {
                 inOutLogs = List<Map<String, dynamic>>.from(defaultLogs);
               }
 
-              final leavesStr = prefs.getString('leaves_list_v2');
+              final leavesStr = prefs.getString('crpf_leaves_master_v3');
               if (leavesStr != null) {
                 leaves = List<Map<String, dynamic>>.from(jsonDecode(leavesStr));
               } else {
                 leaves = List<Map<String, dynamic>>.from(defaultLeaves);
               }
 
-              final passStr = prefs.getString('passwords_map_v2');
+              final passStr = prefs.getString('crpf_passwords_v3');
               if (passStr != null) {
                 passwords = Map<String, String>.from(jsonDecode(passStr));
               } else {
@@ -118,13 +119,14 @@ jobs:
 
             static Future<void> saveData() async {
               sortStaffBySeniority();
-              await prefs.setString('staff_list_v2', jsonEncode(staffList));
-              await prefs.setString('vehicles_list_v2', jsonEncode(vehicles));
-              await prefs.setString('in_out_logs_v2', jsonEncode(inOutLogs));
-              await prefs.setString('leaves_list_v2', jsonEncode(leaves));
-              await prefs.setString('passwords_map_v2', jsonEncode(passwords));
+              await prefs.setString('crpf_staff_master_v3', jsonEncode(staffList));
+              await prefs.setString('crpf_veh_master_v3', jsonEncode(vehicles));
+              await prefs.setString('crpf_inout_master_v3', jsonEncode(inOutLogs));
+              await prefs.setString('crpf_leaves_master_v3', jsonEncode(leaves));
+              await prefs.setString('crpf_passwords_v3', jsonEncode(passwords));
             }
 
+            // फोर्स नंबर सीनियरिटी सॉर्टिंग (CRPF Force Number Seniority Order)
             static void sortStaffBySeniority() {
               staffList.sort((a, b) {
                 String fa = a['force'].toString().trim();
@@ -133,66 +135,282 @@ jobs:
               });
             }
 
-            // Default Staff Records
+            // 45 कार्मिकों का पूरा डेटा (सीनियरिटी व बायोडाटा सहित)
             static final List<Map<String, dynamic>> defaultStaff = [
               {
                 'force': '165060166', 'rank': 'CT/DVR', 'name': 'VIKASH DUBEY', 'role': 'MT WRITER (ADMIN)',
                 'mobile': '9149753674', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'UTTAR PRADESH',
                 'address': 'Vill- Dubeypur, Post- Sadar, Dist- Kanpur Nagar, UP - 208001',
-                'dl_no': 'UP78-2016-004521', 'photo_avatar': '1'
+                'dl_no': 'UP78-2016-004521', 'photo_base64': ''
               },
               {
                 'force': '900440064', 'rank': 'INSP/MT', 'name': 'MD. MOKTAR HUSSAIN', 'role': 'MTO',
                 'mobile': '9911439132', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'AB+', 'state': 'BIHAR',
-                'address': 'Vill- Mohanpur, Dist- Patna, Bihar', 'dl_no': 'BR01-1991-002134', 'photo_avatar': '2'
+                'address': 'Vill- Mohanpur, Dist- Patna, Bihar', 'dl_no': 'BR01-1991-002134', 'photo_base64': ''
               },
               {
                 'force': '900991221', 'rank': 'SI/MM', 'name': 'E. HARINATH', 'role': 'SI/MM',
                 'mobile': '7889915950', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'WORKSHOP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'ANDHRA PRADESH',
-                'address': 'Dist- Chittoor, Andhra Pradesh', 'dl_no': 'AP03-1992-008123', 'photo_avatar': '3'
+                'address': 'Dist- Chittoor, Andhra Pradesh', 'dl_no': 'AP03-1992-008123', 'photo_base64': ''
               },
               {
                 'force': '911262278', 'rank': 'HC/DVR', 'name': 'DEBASHISH DEB', 'role': 'MT HAVILDAR',
                 'mobile': '9954250964', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'TRIPURA',
-                'address': 'Agartala, Tripura West', 'dl_no': 'TR01-1995-001245', 'photo_avatar': '4'
+                'address': 'Agartala, Tripura West', 'dl_no': 'TR01-1995-001245', 'photo_base64': ''
               },
               {
                 'force': '913133824', 'rank': 'HC/DVR', 'name': 'R. MADHESHWARAN', 'role': 'STORE HAVILDAR',
                 'mobile': '6006461611', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'TAMIL NADU',
-                'address': 'Salem, Tamil Nadu', 'dl_no': 'TN02-1994-004312', 'photo_avatar': '5'
+                'address': 'Salem, Tamil Nadu', 'dl_no': 'TN02-1994-004312', 'photo_base64': ''
               },
               {
                 'force': '923050413', 'rank': 'ASI/MT', 'name': 'HIT LAL PANDIT', 'role': 'ASI/MT',
                 'mobile': '6005871431', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'BIHAR',
-                'address': 'Muzaffarpur, Bihar', 'dl_no': 'BR06-1993-005612', 'photo_avatar': '6'
+                'address': 'Muzaffarpur, Bihar', 'dl_no': 'BR06-1993-005612', 'photo_base64': ''
               },
               {
                 'force': '971240795', 'rank': 'HC/DVR', 'name': 'NIPEN HAJARIKA', 'role': 'POL HAVILDAR',
                 'mobile': '8638181314', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'ASSAM',
-                'address': 'Guwahati, Assam', 'dl_no': 'AS01-1998-009841', 'photo_avatar': '7'
+                'address': 'Guwahati, Assam', 'dl_no': 'AS01-1998-009841', 'photo_base64': ''
               },
               {
-                'force': '175091091', 'rank': 'CT/DVR', 'name': 'ABDUL SAHID', 'role': 'DRIVER',
+                'force': '943292662', 'rank': 'HC/DVR', 'name': 'M. BALA SUBRAMANIAM', 'role': 'STAFF',
+                'mobile': '7847032096', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'TAMIL NADU',
+                'address': 'Madurai, TN', 'dl_no': 'TN05-1996-004512', 'photo_base64': ''
+              },
+              {
+                'force': '940760076', 'rank': 'HC/DVR', 'name': 'SURESH KUMAR', 'role': 'STAFF',
+                'mobile': '9555044278', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'HARYANA',
+                'address': 'Rohtak, Haryana', 'dl_no': 'HR01-1995-003412', 'photo_base64': ''
+              },
+              {
+                'force': '941342109', 'rank': 'HC/DVR', 'name': 'MANI RAM CHETTRI', 'role': 'STAFF',
+                'mobile': '8787564820', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'SIKKIM',
+                'address': 'Gangtok, Sikkim', 'dl_no': 'SK01-1996-001234', 'photo_base64': ''
+              },
+              {
+                'force': '951270048', 'rank': 'HC/DVR', 'name': 'MANIKANTAN S.', 'role': 'STAFF',
+                'mobile': '6009143112', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'KERALA',
+                'address': 'Kollam, Kerala', 'dl_no': 'KL01-1997-009876', 'photo_base64': ''
+              },
+              {
+                'force': '951431024', 'rank': 'HC/DVR', 'name': 'RAKESH KUMAR', 'role': 'STAFF',
+                'mobile': '7780955823', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'PUNJAB',
+                'address': 'Jalandhar, Punjab', 'dl_no': 'PB02-1997-003421', 'photo_base64': ''
+              },
+              {
+                'force': '981241197', 'rank': 'HC/DVR', 'name': 'RAJEEB SHARMA', 'role': 'STAFF',
+                'mobile': '8459824082', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'ASSAM',
+                'address': 'Tezpur, Assam', 'dl_no': 'AS02-1999-001289', 'photo_base64': ''
+              },
+              {
+                'force': '981231361', 'rank': 'HC/DVR', 'name': 'SHANKAR BISWAS', 'role': 'STAFF',
+                'mobile': '7583992113', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'WEST BENGAL',
+                'address': 'Nadia, WB', 'dl_no': 'WB01-1999-006745', 'photo_base64': ''
+              },
+              {
+                'force': '991241742', 'rank': 'HC/DVR', 'name': 'SUJEET KUMAR CHOUDHARY', 'role': 'STAFF',
+                'mobile': '7005052327', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'BIHAR',
+                'address': 'Darbhanga, Bihar', 'dl_no': 'BR02-2000-008912', 'photo_base64': ''
+              },
+              {
+                'force': '005103742', 'rank': 'HC/DVR', 'name': 'KUSHAL NANDAN', 'role': 'STAFF',
+                'mobile': '8837360651', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'ASSAM',
+                'address': 'Silchar, Assam', 'dl_no': 'AS03-2001-002341', 'photo_base64': ''
+              },
+              {
+                'force': '005132199', 'rank': 'HC/DVR', 'name': 'SUBIR NATH', 'role': 'STAFF',
+                'mobile': '6005393358', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'TRIPURA',
+                'address': 'Dharmanagar, Tripura', 'dl_no': 'TR01-2001-009823', 'photo_base64': ''
+              },
+              {
+                'force': '015261543', 'rank': 'HC/DVR', 'name': 'SUNIL KUMAR', 'role': 'STAFF',
+                'mobile': '9149990669', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'HARYANA',
+                'address': 'Hisar, Haryana', 'dl_no': 'HR03-2002-007812', 'photo_base64': ''
+              },
+              {
+                'force': '015122276', 'rank': 'HC/DVR', 'name': 'PRAJAPATI HARESH KUMAR', 'role': 'STAFF',
+                'mobile': '8401464056', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'GUJARAT',
+                'address': 'Mehsana, Gujarat', 'dl_no': 'GJ01-2002-005634', 'photo_base64': ''
+              },
+              {
+                'force': '025260477', 'rank': 'HC/DVR', 'name': 'SANDEEP KUMAR', 'role': 'STAFF',
+                'mobile': '7505246363', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'UTTAR PRADESH',
+                'address': 'Meerut, UP', 'dl_no': 'UP14-2003-004312', 'photo_base64': ''
+              },
+              {
+                'force': '055132182', 'rank': 'HC/DVR', 'name': 'RAJEEV RANJAN', 'role': 'STAFF',
+                'mobile': '6005921614', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'BIHAR',
+                'address': 'Gaya, Bihar', 'dl_no': 'BR01-2006-006723', 'photo_base64': ''
+              },
+              {
+                'force': '031465834', 'rank': 'CT/DVR', 'name': 'RIZWAN A. KHAN', 'role': 'STAFF',
+                'mobile': '7017786859', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'UTTAR PRADESH',
+                'address': 'Lucknow, UP', 'dl_no': 'UP32-2004-001290', 'photo_base64': ''
+              },
+              {
+                'force': '035071624', 'rank': 'CT/DVR', 'name': 'PUSHAP SHARMA', 'role': 'STAFF',
+                'mobile': '9149654815', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'JAMMU & KASHMIR',
+                'address': 'Kathua, J&K', 'dl_no': 'JK02-2004-008912', 'photo_base64': ''
+              },
+              {
+                'force': '045022839', 'rank': 'CT/DVR', 'name': 'RAM KUMAR', 'role': 'STAFF',
+                'mobile': '8077418326', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'RAJASTHAN',
+                'address': 'Alwar, Rajasthan', 'dl_no': 'RJ14-2005-003412', 'photo_base64': ''
+              },
+              {
+                'force': '085250359', 'rank': 'CT/DVR', 'name': 'KAMAL KUMAR', 'role': 'STAFF',
+                'mobile': '8222091425', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'HARYANA',
+                'address': 'Panipat, Haryana', 'dl_no': 'HR06-2009-009812', 'photo_base64': ''
+              },
+              {
+                'force': '125002666', 'rank': 'CT/DVR', 'name': 'MAHAVEER SINGH', 'role': 'STAFF',
+                'mobile': '9887129596', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'RAJASTHAN',
+                'address': 'Nagaur, Rajasthan', 'dl_no': 'RJ21-2013-004561', 'photo_base64': ''
+              },
+              {
+                'force': '135352802', 'rank': 'CT/DVR', 'name': 'UPENDRA DEBNATH', 'role': 'STAFF',
+                'mobile': '7002067665', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'TRIPURA',
+                'address': 'Khowai, Tripura', 'dl_no': 'TR01-2014-007812', 'photo_base64': ''
+              },
+              {
+                'force': '135175564', 'rank': 'CT/DVR', 'name': 'NITESH KUMAR SINGH', 'role': 'STAFF',
+                'mobile': '9430127325', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'BIHAR',
+                'address': 'Ara, Bihar', 'dl_no': 'BR03-2014-001278', 'photo_base64': ''
+              },
+              {
+                'force': '155090312', 'rank': 'CT/DVR', 'name': 'RAJKUMAR TIWARI', 'role': 'STAFF',
+                'mobile': '7217631157', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'MADHYA PRADESH',
+                'address': 'Rewa, MP', 'dl_no': 'MP04-2016-004312', 'photo_base64': ''
+              },
+              {
+                'force': '175318309', 'rank': 'CT/DVR', 'name': 'BINOY MALICK', 'role': 'STAFF',
+                'mobile': '7679207710', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'WEST BENGAL',
+                'address': 'Burdwan, WB', 'dl_no': 'WB02-2018-009823', 'photo_base64': ''
+              },
+              {
+                'force': '175091091', 'rank': 'CT/DVR', 'name': 'ABDUL SAHID', 'role': 'STAFF',
                 'mobile': '9864501923', 'status': 'ATTACHED', 'location': 'IG TPA SEC.', 'duty_type': 'ATTACHED',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'ASSAM',
-                'address': 'Karimganj, Assam', 'dl_no': 'AS01-2018-003412', 'photo_avatar': '8'
+                'address': 'Karimganj, Assam', 'dl_no': 'AS01-2018-003412', 'photo_base64': ''
+              },
+              {
+                'force': '175091108', 'rank': 'CT/DVR', 'name': 'N. MANIMOHAN SINGH', 'role': 'STAFF',
+                'mobile': '9959290638', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'MANIPUR',
+                'address': 'Imphal, Manipur', 'dl_no': 'MN01-2018-001245', 'photo_base64': ''
+              },
+              {
+                'force': '175275977', 'rank': 'CT/DVR', 'name': 'SUDALA PRAVEEN', 'role': 'STAFF',
+                'mobile': '9550622631', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'TELANGANA',
+                'address': 'Warangal, Telangana', 'dl_no': 'TS09-2018-008912', 'photo_base64': ''
+              },
+              {
+                'force': '175170105', 'rank': 'CT/DVR', 'name': 'SANGEET GIRI', 'role': 'STAFF',
+                'mobile': '8887560074', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'UTTAR PRADESH',
+                'address': 'Varanasi, UP', 'dl_no': 'UP65-2018-004523', 'photo_base64': ''
+              },
+              {
+                'force': '175170275', 'rank': 'CT/DVR', 'name': 'RITESH KUMAR PANDEY', 'role': 'STAFF',
+                'mobile': '8877755556', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'BIHAR',
+                'address': 'Buxar, Bihar', 'dl_no': 'BR01-2018-007812', 'photo_base64': ''
+              },
+              {
+                'force': '175370657', 'rank': 'CT/DVR', 'name': 'ANUJ GAUTAM', 'role': 'STAFF',
+                'mobile': '8954832390', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'UTTAR PRADESH',
+                'address': 'Agra, UP', 'dl_no': 'UP80-2018-002341', 'photo_base64': ''
+              },
+              {
+                'force': '175377413', 'rank': 'CT/DVR', 'name': 'AJEET SINGH', 'role': 'STAFF',
+                'mobile': '9568783642', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'UTTARAKHAND',
+                'address': 'Dehradun, UK', 'dl_no': 'UK07-2018-009812', 'photo_base64': ''
+              },
+              {
+                'force': '175376407', 'rank': 'CT/DVR', 'name': 'ATUL KUMAR', 'role': 'STAFF',
+                'mobile': '6394818493', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'UTTAR PRADESH',
+                'address': 'Prayagraj, UP', 'dl_no': 'UP70-2018-001234', 'photo_base64': ''
+              },
+              {
+                'force': '175219115', 'rank': 'CT/DVR', 'name': 'RAMESH JAMBHALE', 'role': 'STAFF',
+                'mobile': '6006258448', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'MAHARASHTRA',
+                'address': 'Pune, Maharashtra', 'dl_no': 'MH12-2018-006712', 'photo_base64': ''
+              },
+              {
+                'force': '175320249', 'rank': 'CT/DVR', 'name': 'MUKESH RAM', 'role': 'STAFF',
+                'mobile': '7999851490', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'CAMP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'CHHATTISGARH',
+                'address': 'Raipur, CG', 'dl_no': 'CG04-2018-003412', 'photo_base64': ''
               },
               {
                 'force': '085120542', 'rank': 'HC/MMV', 'name': 'SHIVNANDAN DAS', 'role': 'WORKSHOP',
                 'mobile': '9852205010', 'status': 'ATTACHED', 'location': 'IG TPA SEC.', 'duty_type': 'ATTACHED',
                 'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'BIHAR',
-                'address': 'Gaya, Bihar', 'dl_no': 'BR01-2009-004512', 'photo_avatar': '9'
+                'address': 'Gaya, Bihar', 'dl_no': 'BR01-2009-004512', 'photo_base64': ''
+              },
+              {
+                'force': '105081179', 'rank': 'HC/MMV', 'name': 'SANJEET KUMAR', 'role': 'WORKSHOP',
+                'mobile': '8102448327', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'WORKSHOP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'JHARKHAND',
+                'address': 'Ranchi, Jharkhand', 'dl_no': 'JH01-2011-008923', 'photo_base64': ''
+              },
+              {
+                'force': '115176049', 'rank': 'HC/MMV', 'name': 'PRAMOD KUMAR PATEL', 'role': 'WORKSHOP',
+                'mobile': '9517259769', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'WORKSHOP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'O+', 'state': 'UTTAR PRADESH',
+                'address': 'Varanasi, UP', 'dl_no': 'UP65-2012-003456', 'photo_base64': ''
+              },
+              {
+                'force': '175091064', 'rank': 'CT/MMV', 'name': 'JYOTIRMAY SAHARIYA', 'role': 'WORKSHOP',
+                'mobile': '7006457718', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'WORKSHOP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'A+', 'state': 'ASSAM',
+                'address': 'Mangaldai, Assam', 'dl_no': 'AS01-2018-001290', 'photo_base64': ''
+              },
+              {
+                'force': '115094667', 'rank': 'CT/PTR', 'name': 'MD. ROKIBOL ISLAM', 'role': 'WORKSHOP',
+                'mobile': '7002779898', 'status': 'PRESENT', 'location': 'GC AGT', 'duty_type': 'WORKSHOP',
+                'el_bal': 60, 'cl_bal': 15, 'blood': 'B+', 'state': 'ASSAM',
+                'address': 'Nagaon, Assam', 'dl_no': 'AS02-2012-009812', 'photo_base64': ''
               },
             ];
 
-            // Default Categorized Vehicles
+            // 40 वाहन (LV, MV, HV, SV एवं अटैचमेंट विवरण सहित)
             static final List<Map<String, dynamic>> defaultVehicles = [
               // --- 1. LIGHT VEHICLES (LV) ---
               {
@@ -423,7 +641,7 @@ jobs:
             ];
           }
 
-          // ---------------- LOGIN SCREEN WITH FORGOT PASSWORD RESET ----------------
+          // ================= LOGIN SCREEN WITH FORGOT PASSWORD RESET =================
           class LoginScreen extends StatefulWidget {
             const LoginScreen({Key? key}) : super(key: key);
 
@@ -610,7 +828,7 @@ jobs:
             }
           }
 
-          // ---------------- DASHBOARD SCREEN ----------------
+          // ================= DASHBOARD SCREEN =================
           class DashboardScreen extends StatefulWidget {
             final Map<String, dynamic> currentUser;
             const DashboardScreen({Key? key, required this.currentUser}) : super(key: key);
@@ -802,7 +1020,7 @@ jobs:
               );
             }
 
-            // ---------------- 1. VEHICLE MANAGEMENT (CATEGORIZED & FULL DETAILS) ----------------
+            // ================= 1. VEHICLE MANAGEMENT =================
             void _openVehicles(bool isAdmin) {
               showModalBottomSheet(
                 context: context,
@@ -899,7 +1117,7 @@ jobs:
               );
             }
 
-            // गाड़ी का पूरा हिस्ट्री कार्ड (Complete Vehicle Bio-Data)
+            // गाड़ी का पूरा हिस्ट्री कार्ड (Vehicle History & Charge Records)
             void _viewVehicleDetailsDialog(BuildContext ctx, Map<String, dynamic> v, bool isAdmin, VoidCallback onUpdated) {
               showDialog(
                 context: ctx,
@@ -1144,7 +1362,7 @@ jobs:
               );
             }
 
-            // ---------------- 2. STAFF BIO-DATA WITH SENIORITY ----------------
+            // ================= 2. STAFF BIO-DATA WITH DIRECT GALLERY UPLOAD =================
             void _openStaff(bool isAdmin) {
               showModalBottomSheet(
                 context: context,
@@ -1187,6 +1405,8 @@ jobs:
                               if (s['status'] == 'GOVT_DUTY') statusCol = Colors.indigo;
                               if (s['status'] == 'LEAVE') statusCol = Colors.orange;
 
+                              final bool hasPhoto = s['photo_base64'] != null && s['photo_base64'].toString().isNotEmpty;
+
                               return Card(
                                 margin: const EdgeInsets.symmetric(vertical: 4),
                                 child: ListTile(
@@ -1199,7 +1419,8 @@ jobs:
                                   },
                                   leading: CircleAvatar(
                                     backgroundColor: s['role'].toString().contains('ADMIN') ? Colors.deepOrange : Colors.indigo,
-                                    child: Text(s['name'][0], style: const TextStyle(color: Colors.white)),
+                                    backgroundImage: hasPhoto ? MemoryImage(base64Decode(s['photo_base64'])) : null,
+                                    child: !hasPhoto ? Text(s['name'][0], style: const TextStyle(color: Colors.white)) : null,
                                   ),
                                   title: Text('${i + 1}. ${s['rank']} ${s['name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
                                   subtitle: Text('फोर्स सं: ${s['force']} | रोल: ${s['role']}\nस्थिति: ${s['status']} (${s['location']})'),
@@ -1221,13 +1442,16 @@ jobs:
                 context: ctx,
                 builder: (bCtx) => StatefulBuilder(
                   builder: (bCtx, setBioState) {
+                    final bool hasPhoto = staff['photo_base64'] != null && staff['photo_base64'].toString().isNotEmpty;
+
                     return AlertDialog(
                       title: Row(
                         children: [
                           CircleAvatar(
                             radius: 28,
                             backgroundColor: Colors.indigo,
-                            child: Text(staff['name'][0], style: const TextStyle(fontSize: 22, color: Colors.white)),
+                            backgroundImage: hasPhoto ? MemoryImage(base64Decode(staff['photo_base64'])) : null,
+                            child: !hasPhoto ? Text(staff['name'][0], style: const TextStyle(fontSize: 22, color: Colors.white)) : null,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1259,6 +1483,44 @@ jobs:
                             const Text('अवकाश कोटा (Leave Balance):', style: TextStyle(fontWeight: FontWeight.bold)),
                             Text('अर्जित अवकाश (EL): ${staff['el_bal']} / 60 दिन', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                             Text('आकस्मिक अवकाश (CL): ${staff['cl_bal']} / 15 दिन', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                            if (isAdmin) ...[
+                              const Divider(),
+                              const Text('गैलरी से फोटो अपलोड (Admin Photo Picker):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+                                    icon: const Icon(Icons.photo_library, size: 14),
+                                    label: const Text('गैलरी से चुनें', style: TextStyle(fontSize: 11)),
+                                    onPressed: () async {
+                                      final picker = ImagePicker();
+                                      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 40);
+                                      if (picked != null) {
+                                        final bytes = await picked.readAsBytes();
+                                        staff['photo_base64'] = base64Encode(bytes);
+                                        await MTStorage.saveData();
+                                        setBioState(() {});
+                                        onUpdated();
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 6),
+                                  if (hasPhoto)
+                                    OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                                      icon: const Icon(Icons.delete, size: 14),
+                                      label: const Text('हटाएं', style: TextStyle(fontSize: 11)),
+                                      onPressed: () async {
+                                        staff['photo_base64'] = '';
+                                        await MTStorage.saveData();
+                                        setBioState(() {});
+                                        onUpdated();
+                                      },
+                                    ),
+                                ],
+                              )
+                            ],
                           ],
                         ),
                       ),
@@ -1389,7 +1651,7 @@ jobs:
                                 'location': locCtrl.text.trim().toUpperCase(),
                                 'el_bal': int.tryParse(elCtrl.text) ?? 60,
                                 'cl_bal': int.tryParse(clCtrl.text) ?? 15,
-                                'photo_avatar': '1',
+                                'photo_base64': '',
                               });
                             }
                             await MTStorage.saveData();
@@ -1405,7 +1667,7 @@ jobs:
               );
             }
 
-            // ---------------- 3. SAMBHAV-STYLE LEAVE PASS MANAGEMENT ----------------
+            // ================= 3. SAMBHAV-STYLE LEAVE PASS MANAGEMENT =================
             void _openLeaves(bool isAdmin) {
               showModalBottomSheet(
                 context: context,
@@ -1575,7 +1837,7 @@ jobs:
               );
             }
 
-            // ---------------- 4. VEHICLE IN / OUT ----------------
+            // ================= 4. VEHICLE IN / OUT =================
             void _openInOutLogs(bool isAdmin) {
               showModalBottomSheet(
                 context: context,
@@ -1753,11 +2015,11 @@ jobs:
             }
           }
 
-          // ---------------- DAILY MT PARADE STATE SCREEN ----------------
+          // ================= DAILY MT PARADE STATE SCREEN =================
           class ParadeStateScreen extends StatelessWidget {
             const ParadeStateScreen({Key? key}) : super(key: key);
 
-            void _copyReport(BuildContext context) {
+            void _printReportDialog(BuildContext context) {
               final dateStr = DateFormat('dd/MM/yyyy').format(DateTime.now());
               final totalStaff = MTStorage.staffList.length;
               final onLeave = MTStorage.staffList.where((s) => s['status'] == 'LEAVE').length;
@@ -1771,32 +2033,57 @@ jobs:
               final offRoadVeh = MTStorage.vehicles.where((v) => v['status'] == 'OFF_ROAD').length;
 
               final reportText = '''
-          PARADE STATEMENT R/O MT GC CRPF, AGARTALA (WEST TRIPURA)
+          ==================================================
+          PARADE STATEMENT R/O MT GC CRPF, AGARTALA (W. TRIPURA)
           DATE: $dateStr
+          ==================================================
 
-          1. PERSONNEL STATE (STAFF):
-          - POSTED STR: $totalStaff
-          - PRESENT IN UNIT: $present
-          - ON LEAVE: $onLeave
-          - ATTACHED OUT: $attached
+          [1] PERSONNEL STATE (STAFF):
+          • AUTHORISED STRENGTH: 65
+          • POSTED STRENGTH: $totalStaff
+          • PRESENT IN UNIT: $present
+          • ON LEAVE (EL/CL): $onLeave
+          • ATTACHED OUT: $attached
+          • GOVT DUTY / COURSE: ${MTStorage.staffList.where((s) => s['status'] == 'GOVT_DUTY' || s['status'] == 'COURSE').length}
 
-          2. VEHICLE FLEET STATE:
-          - TOTAL VEHICLES: $totalVeh
-          - AVAILABLE: $availVeh
-          - ON DUTY: $onDutyVeh
-          - ATTACHED OUT: $attVeh
-          - OFF-ROAD: $offRoadVeh
+          [2] VEHICLE FLEET STATE:
+          • TOTAL VEHICLES: $totalVeh
+          • AVAILABLE (ON-ROAD): $availVeh
+          • ON DUTY: $onDutyVeh
+          • ATTACHED OUT: $attVeh
+          • OFF-ROAD (WORKSHOP): $offRoadVeh
 
-          3. ATTACHED VEHICLES LIST:
-          - IG Office Agartala: JK02 DK 7573, MH40 BG 4125, AS01 NC 2289
-          - 71 Bn CRPF: AS01 DC 3020
-          - 124 Bn CRPF: AS01 DD 1809
-          - Manipur Sector HQ: TR01 Q 0986
+          [3] ATTACHED VEHICLES LIST:
+          • IG Office Agartala: JK02 DK 7573, MH40 BG 4125, AS01 NC 2289
+          • 71 Bn CRPF: AS01 DC 3020 (Tata Bus)
+          • 124 Bn CRPF: AS01 DD 1809 (Tata Bus)
+          • Manipur Sector HQ: TR01 Q 0986 (Tractor)
+          ==================================================
+          MT WRITER (GC AGT)                MTO (GC AGT)
           ''';
 
               Clipboard.setData(ClipboardData(text: reportText));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('परेड स्टेट सफलतापूर्वक कॉपी हो गया! आप इसे कहीं भी शेयर या प्रिंट कर सकते हैं।')),
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('दैनिक परेड स्टेट तैयार है'),
+                  content: SingleChildScrollView(
+                    child: Text(reportText, style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
+                  ),
+                  actions: [
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.copy),
+                      label: const Text('कॉपी व शेयर करें'),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('परेड स्टेट क्लिपबोर्ड में कॉपी हो गया! आप इसे WhatsApp या प्रिंटर पर भेज सकते हैं।')),
+                        );
+                      },
+                    ),
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('बंद करें')),
+                  ],
+                ),
               );
             }
 
@@ -1811,9 +2098,9 @@ jobs:
                   foregroundColor: Colors.white,
                   actions: [
                     IconButton(
-                      icon: const Icon(Icons.copy),
-                      tooltip: 'पूरा परेड स्टेट कॉपी करें',
-                      onPressed: () => _copyReport(context),
+                      icon: const Icon(Icons.print),
+                      tooltip: 'रिपोर्ट प्रिंट / कॉपी करें',
+                      onPressed: () => _printReportDialog(context),
                     )
                   ],
                 ),
@@ -1894,9 +2181,9 @@ jobs:
                             backgroundColor: const Color(0xFF1B3B6F),
                             foregroundColor: Colors.white,
                           ),
-                          icon: const Icon(Icons.copy),
-                          label: const Text('पूरा परेड स्टेट कॉपी करें (Share/Print)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                          onPressed: () => _copyReport(context),
+                          icon: const Icon(Icons.print),
+                          label: const Text('परेड स्टेट देखें व प्रिंट / कॉपी करें', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          onPressed: () => _printReportDialog(context),
                         ),
                       ),
                     ],
@@ -1928,5 +2215,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MT_GC_Agartala_Final_App_APK
+          name: MT_GC_Agartala_Full_Update_APK
           path: mt_app/build/app/outputs/flutter-apk/app-release.apk
