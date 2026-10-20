@@ -76,15 +76,15 @@ jobs:
               },
               'CLK001': {
                 'password': 'Agartala@123',
-                'name': 'Rakesh Sharma',
-                'rank': 'HC/GD (MT Clerk)',
+                'name': 'VIKASH DUBEY',
+                'rank': 'HC/DVR (MT Clerk)',
                 'role': 'CLERK',
                 'status': 'PRESENT'
               },
-              'DRV001': {
+              'DVR001': {
                 'password': 'Driver@123',
                 'name': 'Vikash Dubey',
-                'rank': 'CT/GD (Driver)',
+                'rank': 'CT/DVR',
                 'role': 'DRIVER',
                 'status': 'PRESENT'
               },
@@ -280,8 +280,8 @@ jobs:
                             backgroundColor: const Color(0xFF1B3B6F),
                             child: Text(widget.userName[0], style: const TextStyle(color: Colors.white)),
                           ),
-                          title: Text('${widget.rank}${widget.userName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('फोर्स सं: ${widget.forceNo} \vert{} रोल: ${widget.role}'),
+                          title: Text('${widget.rank} ${widget.userName}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('फोर्स सं: ${widget.forceNo} | रोल: ${widget.role}'),
                           trailing: Chip(
                             label: Text(widget.status),
                             backgroundColor: Colors.green.shade100,
@@ -382,7 +382,7 @@ jobs:
                 builder: (ctx) => ListView.builder(
                   itemCount: trips.length,
                   itemBuilder: (ctx, i) => ListTile(
-                    title: Text('${trips[i]['vehicle']} -${trips[i]['purpose']}'),
+                    title: Text('${trips[i]['vehicle']} - ${trips[i]['purpose']}'),
                     subtitle: Text('चालक: ${trips[i]['driver']}'),
                     trailing: Chip(label: Text(trips[i]['status'])),
                   ),
@@ -397,5 +397,37 @@ jobs:
                   itemCount: leaves.length,
                   itemBuilder: (ctx, i) => ListTile(
                     title: Text('${leaves[i]['name']} (${leaves[i]['type']})'),
-                    subtitle: Text('अवधि: ${leaves[i]['days']} दिन \vert{} ${leaves[i]['reason']}'),
-                    trailing: Chip(label: Text(leaves
+                    subtitle: Text('अवधि: ${leaves[i]['days']} दिन | ${leaves[i]['reason']}'),
+                    trailing: Chip(label: Text(leaves[i]['status'])),
+                  ),
+                ),
+              );
+            }
+
+            void _showStaffSheet() {
+              showModalBottomSheet(
+                context: context,
+                builder: (ctx) => ListView.builder(
+                  itemCount: staffList.length,
+                  itemBuilder: (ctx, i) => ListTile(
+                    leading: CircleAvatar(child: Text(staffList[i]['name'][0])),
+                    title: Text('${staffList[i]['rank']} ${staffList[i]['name']}'),
+                    subtitle: Text('फोर्स सं: ${staffList[i]['force']}'),
+                    trailing: Chip(label: Text(staffList[i]['status'])),
+                  ),
+                ),
+              );
+            }
+          }
+          EOF
+
+      - name: Build Release APK
+        run: |
+          cd mt_app
+          flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MT_Branch_GC_Agartala_Final_APK
+          path: mt_app/build/app/outputs/flutter-apk/app-release.apk
