@@ -56,101 +56,288 @@ jobs:
 
           // ---------------- GLOBAL DATA STORE ----------------
           class MTData {
-            // केवल CT/DVR विकास दुबे (165060166) ADMIN हैं, बाकी सब STAFF हैं
+            static Map<String, String> passwords = {
+              '165060166': 'Mt@165060166',
+            };
+
+            // 45 कार्मिकों का पूरा बायोडाटा डेटाबेस
             static List<Map<String, dynamic>> staffList = [
-              {'force': '165060166', 'rank': 'CT/DVR', 'name': 'VIKASH DUBEY', 'role': 'ADMIN', 'mobile': '9149753674', 'status': 'PRESENT'},
-              {'force': '900440064', 'rank': 'INSP/MT', 'name': 'MD. MOKTAR HUSSAIN', 'role': 'STAFF', 'mobile': '9911439132', 'status': 'PRESENT'},
-              {'force': '900991221', 'rank': 'SI/MM', 'name': 'E. HARINATH', 'role': 'STAFF', 'mobile': '7889915950', 'status': 'PRESENT'},
-              {'force': '923050413', 'rank': 'ASI/MT', 'name': 'HIT LAL PANDIT', 'role': 'STAFF', 'mobile': '6005871431', 'status': 'PRESENT'},
-              {'force': '911262278', 'rank': 'HC/DVR', 'name': 'DEBASHISH DEB', 'role': 'STAFF', 'mobile': '9954250964', 'status': 'PRESENT'},
-              {'force': '913133824', 'rank': 'HC/DVR', 'name': 'R. MADHESHWARAN', 'role': 'STAFF', 'mobile': '6006461611', 'status': 'PRESENT'},
-              {'force': '943292662', 'rank': 'HC/DVR', 'name': 'M. BALA SUBRAMANIAM', 'role': 'STAFF', 'mobile': '7847032096', 'status': 'PRESENT'},
-              {'force': '940760076', 'rank': 'HC/DVR', 'name': 'SURESH KUMAR', 'role': 'STAFF', 'mobile': '9555044278', 'status': 'PRESENT'},
-              {'force': '941342109', 'rank': 'HC/DVR', 'name': 'MANI RAM CHETTRI', 'role': 'STAFF', 'mobile': '8787564820', 'status': 'PRESENT'},
-              {'force': '951270048', 'rank': 'HC/DVR', 'name': 'MANIKANTAN S.', 'role': 'STAFF', 'mobile': '6009143112', 'status': 'PRESENT'},
-              {'force': '951431024', 'rank': 'HC/DVR', 'name': 'RAKESH KUMAR', 'role': 'STAFF', 'mobile': '7780955823', 'status': 'PRESENT'},
-              {'force': '971240795', 'rank': 'HC/DVR', 'name': 'NIPEN HAJARIKA', 'role': 'STAFF', 'mobile': '8638181314', 'status': 'PRESENT'},
-              {'force': '981241197', 'rank': 'HC/DVR', 'name': 'RAJEEB SHARMA', 'role': 'STAFF', 'mobile': '8459824082', 'status': 'PRESENT'},
-              {'force': '981231361', 'rank': 'HC/DVR', 'name': 'SHANKAR BISWAS', 'role': 'STAFF', 'mobile': '7583992113', 'status': 'PRESENT'},
-              {'force': '991241742', 'rank': 'HC/DVR', 'name': 'SUJEET KUMAR CHOUDHARY', 'role': 'STAFF', 'mobile': '7005052327', 'status': 'PRESENT'},
-              {'force': '005103742', 'rank': 'HC/DVR', 'name': 'KUSHAL NANDAN', 'role': 'STAFF', 'mobile': '8837360651', 'status': 'PRESENT'},
-              {'force': '005132199', 'rank': 'HC/DVR', 'name': 'SUBIR NATH', 'role': 'STAFF', 'mobile': '6005393358', 'status': 'PRESENT'},
-              {'force': '015261543', 'rank': 'HC/DVR', 'name': 'SUNIL KUMAR', 'role': 'STAFF', 'mobile': '9149990669', 'status': 'PRESENT'},
-              {'force': '015122276', 'rank': 'HC/DVR', 'name': 'PRAJAPATI HARESH KUMAR', 'role': 'STAFF', 'mobile': '8401464056', 'status': 'PRESENT'},
-              {'force': '025260477', 'rank': 'HC/DVR', 'name': 'SANDEEP KUMAR', 'role': 'STAFF', 'mobile': '7505246363', 'status': 'PRESENT'},
-              {'force': '055132182', 'rank': 'HC/DVR', 'name': 'RAJEEV RANJAN', 'role': 'STAFF', 'mobile': '6005921614', 'status': 'PRESENT'},
-              {'force': '031465834', 'rank': 'CT/DVR', 'name': 'RIZWAN A. KHAN', 'role': 'STAFF', 'mobile': '7017786859', 'status': 'PRESENT'},
-              {'force': '035071624', 'rank': 'CT/DVR', 'name': 'PUSHAP SHARMA', 'role': 'STAFF', 'mobile': '9149654815', 'status': 'PRESENT'},
-              {'force': '045022839', 'rank': 'CT/DVR', 'name': 'RAM KUMAR', 'role': 'STAFF', 'mobile': '8077418326', 'status': 'PRESENT'},
-              {'force': '085250359', 'rank': 'CT/DVR', 'name': 'KAMAL KUMAR', 'role': 'STAFF', 'mobile': '8222091425', 'status': 'PRESENT'},
-              {'force': '125002666', 'rank': 'CT/DVR', 'name': 'MAHAVEER SINGH', 'role': 'STAFF', 'mobile': '9887129596', 'status': 'PRESENT'},
-              {'force': '135352802', 'rank': 'CT/DVR', 'name': 'UPENDRA DEBNATH', 'role': 'STAFF', 'mobile': '7002067665', 'status': 'PRESENT'},
-              {'force': '135175564', 'rank': 'CT/DVR', 'name': 'NITESH KUMAR SINGH', 'role': 'STAFF', 'mobile': '9430127325', 'status': 'PRESENT'},
-              {'force': '155090312', 'rank': 'CT/DVR', 'name': 'RAJKUMAR TIWARI', 'role': 'STAFF', 'mobile': '7217631157', 'status': 'PRESENT'},
-              {'force': '175318309', 'rank': 'CT/DVR', 'name': 'BINOY MALICK', 'role': 'STAFF', 'mobile': '7679207710', 'status': 'PRESENT'},
-              {'force': '175091091', 'rank': 'CT/DVR', 'name': 'ABDUL SAHID', 'role': 'STAFF', 'mobile': '9864501923', 'status': 'PRESENT'},
-              {'force': '175091108', 'rank': 'CT/DVR', 'name': 'N. MANIMOHAN SINGH', 'role': 'STAFF', 'mobile': '9959290638', 'status': 'PRESENT'},
-              {'force': '175275977', 'rank': 'CT/DVR', 'name': 'SUDALA PRAVEEN', 'role': 'STAFF', 'mobile': '9550622631', 'status': 'PRESENT'},
-              {'force': '175170105', 'rank': 'CT/DVR', 'name': 'SANGEET GIRI', 'role': 'STAFF', 'mobile': '8887560074', 'status': 'PRESENT'},
-              {'force': '175170275', 'rank': 'CT/DVR', 'name': 'RITESH KUMAR PANDEY', 'role': 'STAFF', 'mobile': '8877755556', 'status': 'PRESENT'},
-              {'force': '175370657', 'rank': 'CT/DVR', 'name': 'ANUJ GAUTAM', 'role': 'STAFF', 'mobile': '8954832390', 'status': 'PRESENT'},
-              {'force': '175377413', 'rank': 'CT/DVR', 'name': 'AJEET SINGH', 'role': 'STAFF', 'mobile': '9568783642', 'status': 'PRESENT'},
-              {'force': '175376407', 'rank': 'CT/DVR', 'name': 'ATUL KUMAR', 'role': 'STAFF', 'mobile': '6394818493', 'status': 'PRESENT'},
-              {'force': '175219115', 'rank': 'CT/DVR', 'name': 'RAMESH JAMBHALE', 'role': 'STAFF', 'mobile': '6006258448', 'status': 'PRESENT'},
-              {'force': '175320249', 'rank': 'CT/DVR', 'name': 'MUKESH RAM', 'role': 'STAFF', 'mobile': '7999851490', 'status': 'PRESENT'},
-              {'force': '085120542', 'rank': 'HC/MMV', 'name': 'SHIVNANDAN DAS', 'role': 'STAFF', 'mobile': '9852205010', 'status': 'PRESENT'},
-              {'force': '105081179', 'rank': 'HC/MMV', 'name': 'SANJEET KUMAR', 'role': 'STAFF', 'mobile': '8102448327', 'status': 'PRESENT'},
-              {'force': '115176049', 'rank': 'HC/MMV', 'name': 'PRAMOD KUMAR PATEL', 'role': 'STAFF', 'mobile': '9517259769', 'status': 'PRESENT'},
-              {'force': '175091064', 'rank': 'CT/MMV', 'name': 'JYOTIRMAY SAHARIYA', 'role': 'STAFF', 'mobile': '7006457718', 'status': 'PRESENT'},
-              {'force': '115094667', 'rank': 'CT/PTR', 'name': 'MD. ROKIBOL ISLAM', 'role': 'STAFF', 'mobile': '7002779898', 'status': 'PRESENT'},
+              {
+                'force': '165060166', 'rank': 'CT/DVR', 'name': 'VIKASH DUBEY', 'role': 'MT WRITER (ADMIN)',
+                'mobile': '9149753674', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'UTTAR PRADESH', 'dl_no': 'UP78-2016-004521', 'photo': ''
+              },
+              {
+                'force': '911262278', 'rank': 'HC/DVR', 'name': 'DEBASHISH DEB', 'role': 'MT HAVILDAR',
+                'mobile': '9954250964', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'TRIPURA', 'dl_no': 'TR01-1995-001245', 'photo': ''
+              },
+              {
+                'force': '971240795', 'rank': 'HC/DVR', 'name': 'NIPEN HAJARIKA', 'role': 'POL HAVILDAR',
+                'mobile': '8638181314', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'ASSAM', 'dl_no': 'AS01-1998-009841', 'photo': ''
+              },
+              {
+                'force': '913133824', 'rank': 'HC/DVR', 'name': 'R. MADHESHWARAN', 'role': 'STORE HAVILDAR',
+                'mobile': '6006461611', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'TAMIL NADU', 'dl_no': 'TN02-1994-004312', 'photo': ''
+              },
+              {
+                'force': '900440064', 'rank': 'INSP/MT', 'name': 'MD. MOKTAR HUSSAIN', 'role': 'MTO',
+                'mobile': '9911439132', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'AB+', 'state': 'BIHAR', 'dl_no': 'BR01-1991-002134', 'photo': ''
+              },
+              {
+                'force': '900991221', 'rank': 'SI/MM', 'name': 'E. HARINATH', 'role': 'SI/MM',
+                'mobile': '7889915950', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'ANDHRA PRADESH', 'dl_no': 'AP03-1992-008123', 'photo': ''
+              },
+              {
+                'force': '923050413', 'rank': 'ASI/MT', 'name': 'HIT LAL PANDIT', 'role': 'ASI/MT',
+                'mobile': '6005871431', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'BIHAR', 'dl_no': 'BR06-1993-005612', 'photo': ''
+              },
+              {
+                'force': '943292662', 'rank': 'HC/DVR', 'name': 'M. BALA SUBRAMANIAM', 'role': 'STAFF',
+                'mobile': '7847032096', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'TAMIL NADU', 'dl_no': 'TN05-1996-004512', 'photo': ''
+              },
+              {
+                'force': '940760076', 'rank': 'HC/DVR', 'name': 'SURESH KUMAR', 'role': 'STAFF',
+                'mobile': '9555044278', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'HARYANA', 'dl_no': 'HR01-1995-003412', 'photo': ''
+              },
+              {
+                'force': '941342109', 'rank': 'HC/DVR', 'name': 'MANI RAM CHETTRI', 'role': 'STAFF',
+                'mobile': '8787564820', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'SIKKIM', 'dl_no': 'SK01-1996-001234', 'photo': ''
+              },
+              {
+                'force': '951270048', 'rank': 'HC/DVR', 'name': 'MANIKANTAN S.', 'role': 'STAFF',
+                'mobile': '6009143112', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'KERALA', 'dl_no': 'KL01-1997-009876', 'photo': ''
+              },
+              {
+                'force': '951431024', 'rank': 'HC/DVR', 'name': 'RAKESH KUMAR', 'role': 'STAFF',
+                'mobile': '7780955823', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'PUNJAB', 'dl_no': 'PB02-1997-003421', 'photo': ''
+              },
+              {
+                'force': '981241197', 'rank': 'HC/DVR', 'name': 'RAJEEB SHARMA', 'role': 'STAFF',
+                'mobile': '8459824082', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'ASSAM', 'dl_no': 'AS02-1999-001289', 'photo': ''
+              },
+              {
+                'force': '981231361', 'rank': 'HC/DVR', 'name': 'SHANKAR BISWAS', 'role': 'STAFF',
+                'mobile': '7583992113', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'WEST BENGAL', 'dl_no': 'WB01-1999-006745', 'photo': ''
+              },
+              {
+                'force': '991241742', 'rank': 'HC/DVR', 'name': 'SUJEET KUMAR CHOUDHARY', 'role': 'STAFF',
+                'mobile': '7005052327', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'BIHAR', 'dl_no': 'BR02-2000-008912', 'photo': ''
+              },
+              {
+                'force': '005103742', 'rank': 'HC/DVR', 'name': 'KUSHAL NANDAN', 'role': 'STAFF',
+                'mobile': '8837360651', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'ASSAM', 'dl_no': 'AS03-2001-002341', 'photo': ''
+              },
+              {
+                'force': '005132199', 'rank': 'HC/DVR', 'name': 'SUBIR NATH', 'role': 'STAFF',
+                'mobile': '6005393358', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'TRIPURA', 'dl_no': 'TR01-2001-009823', 'photo': ''
+              },
+              {
+                'force': '015261543', 'rank': 'HC/DVR', 'name': 'SUNIL KUMAR', 'role': 'STAFF',
+                'mobile': '9149990669', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'HARYANA', 'dl_no': 'HR03-2002-007812', 'photo': ''
+              },
+              {
+                'force': '015122276', 'rank': 'HC/DVR', 'name': 'PRAJAPATI HARESH KUMAR', 'role': 'STAFF',
+                'mobile': '8401464056', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'GUJARAT', 'dl_no': 'GJ01-2002-005634', 'photo': ''
+              },
+              {
+                'force': '025260477', 'rank': 'HC/DVR', 'name': 'SANDEEP KUMAR', 'role': 'STAFF',
+                'mobile': '7505246363', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'UTTAR PRADESH', 'dl_no': 'UP14-2003-004312', 'photo': ''
+              },
+              {
+                'force': '055132182', 'rank': 'HC/DVR', 'name': 'RAJEEV RANJAN', 'role': 'STAFF',
+                'mobile': '6005921614', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'BIHAR', 'dl_no': 'BR01-2006-006723', 'photo': ''
+              },
+              {
+                'force': '031465834', 'rank': 'CT/DVR', 'name': 'RIZWAN A. KHAN', 'role': 'STAFF',
+                'mobile': '7017786859', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'UTTAR PRADESH', 'dl_no': 'UP32-2004-001290', 'photo': ''
+              },
+              {
+                'force': '035071624', 'rank': 'CT/DVR', 'name': 'PUSHAP SHARMA', 'role': 'STAFF',
+                'mobile': '9149654815', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'JAMMU & KASHMIR', 'dl_no': 'JK02-2004-008912', 'photo': ''
+              },
+              {
+                'force': '045022839', 'rank': 'CT/DVR', 'name': 'RAM KUMAR', 'role': 'STAFF',
+                'mobile': '8077418326', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'RAJASTHAN', 'dl_no': 'RJ14-2005-003412', 'photo': ''
+              },
+              {
+                'force': '085250359', 'rank': 'CT/DVR', 'name': 'KAMAL KUMAR', 'role': 'STAFF',
+                'mobile': '8222091425', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'HARYANA', 'dl_no': 'HR06-2009-009812', 'photo': ''
+              },
+              {
+                'force': '125002666', 'rank': 'CT/DVR', 'name': 'MAHAVEER SINGH', 'role': 'STAFF',
+                'mobile': '9887129596', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'RAJASTHAN', 'dl_no': 'RJ21-2013-004561', 'photo': ''
+              },
+              {
+                'force': '135352802', 'rank': 'CT/DVR', 'name': 'UPENDRA DEBNATH', 'role': 'STAFF',
+                'mobile': '7002067665', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'TRIPURA', 'dl_no': 'TR01-2014-007812', 'photo': ''
+              },
+              {
+                'force': '135175564', 'rank': 'CT/DVR', 'name': 'NITESH KUMAR SINGH', 'role': 'STAFF',
+                'mobile': '9430127325', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'BIHAR', 'dl_no': 'BR03-2014-001278', 'photo': ''
+              },
+              {
+                'force': '155090312', 'rank': 'CT/DVR', 'name': 'RAJKUMAR TIWARI', 'role': 'STAFF',
+                'mobile': '7217631157', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'MADHYA PRADESH', 'dl_no': 'MP04-2016-004312', 'photo': ''
+              },
+              {
+                'force': '175318309', 'rank': 'CT/DVR', 'name': 'BINOY MALICK', 'role': 'STAFF',
+                'mobile': '7679207710', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'WEST BENGAL', 'dl_no': 'WB02-2018-009823', 'photo': ''
+              },
+              {
+                'force': '175091091', 'rank': 'CT/DVR', 'name': 'ABDUL SAHID', 'role': 'STAFF',
+                'mobile': '9864501923', 'status': 'ATTACHED', 'location': 'TPA SEC.', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'ASSAM', 'dl_no': 'AS01-2018-003412', 'photo': ''
+              },
+              {
+                'force': '175091108', 'rank': 'CT/DVR', 'name': 'N. MANIMOHAN SINGH', 'role': 'STAFF',
+                'mobile': '9959290638', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'MANIPUR', 'dl_no': 'MN01-2018-001245', 'photo': ''
+              },
+              {
+                'force': '175275977', 'rank': 'CT/DVR', 'name': 'SUDALA PRAVEEN', 'role': 'STAFF',
+                'mobile': '9550622631', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'TELANGANA', 'dl_no': 'TS09-2018-008912', 'photo': ''
+              },
+              {
+                'force': '175170105', 'rank': 'CT/DVR', 'name': 'SANGEET GIRI', 'role': 'STAFF',
+                'mobile': '8887560074', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'UTTAR PRADESH', 'dl_no': 'UP65-2018-004523', 'photo': ''
+              },
+              {
+                'force': '175170275', 'rank': 'CT/DVR', 'name': 'RITESH KUMAR PANDEY', 'role': 'STAFF',
+                'mobile': '8877755556', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'BIHAR', 'dl_no': 'BR01-2018-007812', 'photo': ''
+              },
+              {
+                'force': '175370657', 'rank': 'CT/DVR', 'name': 'ANUJ GAUTAM', 'role': 'STAFF',
+                'mobile': '8954832390', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'UTTAR PRADESH', 'dl_no': 'UP80-2018-002341', 'photo': ''
+              },
+              {
+                'force': '175377413', 'rank': 'CT/DVR', 'name': 'AJEET SINGH', 'role': 'STAFF',
+                'mobile': '9568783642', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'UTTARAKHAND', 'dl_no': 'UK07-2018-009812', 'photo': ''
+              },
+              {
+                'force': '175376407', 'rank': 'CT/DVR', 'name': 'ATUL KUMAR', 'role': 'STAFF',
+                'mobile': '6394818493', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'UTTAR PRADESH', 'dl_no': 'UP70-2018-001234', 'photo': ''
+              },
+              {
+                'force': '175219115', 'rank': 'CT/DVR', 'name': 'RAMESH JAMBHALE', 'role': 'STAFF',
+                'mobile': '6006258448', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'MAHARASHTRA', 'dl_no': 'MH12-2018-006712', 'photo': ''
+              },
+              {
+                'force': '175320249', 'rank': 'CT/DVR', 'name': 'MUKESH RAM', 'role': 'STAFF',
+                'mobile': '7999851490', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'CHHATTISGARH', 'dl_no': 'CG04-2018-003412', 'photo': ''
+              },
+              {
+                'force': '085120542', 'rank': 'HC/MMV', 'name': 'SHIVNANDAN DAS', 'role': 'WORKSHOP',
+                'mobile': '9852205010', 'status': 'ATTACHED', 'location': 'TPA SEC.', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'BIHAR', 'dl_no': 'BR01-2009-004512', 'photo': ''
+              },
+              {
+                'force': '105081179', 'rank': 'HC/MMV', 'name': 'SANJEET KUMAR', 'role': 'WORKSHOP',
+                'mobile': '8102448327', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'JHARKHAND', 'dl_no': 'JH01-2011-008923', 'photo': ''
+              },
+              {
+                'force': '115176049', 'rank': 'HC/MMV', 'name': 'PRAMOD KUMAR PATEL', 'role': 'WORKSHOP',
+                'mobile': '9517259769', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'O+', 'state': 'UTTAR PRADESH', 'dl_no': 'UP65-2012-003456', 'photo': ''
+              },
+              {
+                'force': '175091064', 'rank': 'CT/MMV', 'name': 'JYOTIRMAY SAHARIYA', 'role': 'WORKSHOP',
+                'mobile': '7006457718', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'A+', 'state': 'ASSAM', 'dl_no': 'AS01-2018-001290', 'photo': ''
+              },
+              {
+                'force': '115094667', 'rank': 'CT/PTR', 'name': 'MD. ROKIBOL ISLAM', 'role': 'WORKSHOP',
+                'mobile': '7002779898', 'status': 'PRESENT', 'location': 'GC AGT', 'el_bal': 60, 'cl_bal': 15,
+                'blood': 'B+', 'state': 'ASSAM', 'dl_no': 'AS02-2012-009812', 'photo': ''
+              },
             ];
 
+            // 40 वाहन (अटैच लोकेशन सहित)
             static List<Map<String, dynamic>> vehicles = [
-              {'no': 'AS01 FH 5372', 'type': 'TATA SAFARI', 'status': 'AVAILABLE', 'km': 42100},
-              {'no': 'AS01 EG 8169', 'type': 'M/SCORPIO', 'status': 'AVAILABLE', 'km': 56300},
-              {'no': 'AS01 GL 5719', 'type': 'M/BOLERO NEO', 'status': 'AVAILABLE', 'km': 15200},
-              {'no': 'AS01 BS 1818', 'type': 'M/SWIFT DEZIRE', 'status': 'AVAILABLE', 'km': 88400},
-              {'no': 'TR01 G 1154', 'type': 'EICHER', 'status': 'AVAILABLE', 'km': 64000},
-              {'no': 'TR01 G 1155', 'type': 'EICHER', 'status': 'AVAILABLE', 'km': 71200},
-              {'no': 'AS01 RC 9843', 'type': 'TATA STAR BUS', 'status': 'ON_DUTY', 'km': 28900},
-              {'no': 'AS01 NC 2289', 'type': 'TRACTOR', 'status': 'AVAILABLE', 'km': 9400},
-              {'no': 'AS01 TU 6358', 'type': 'RECOVERY', 'status': 'AVAILABLE', 'km': 31000},
-              {'no': 'AS01 JC 4423', 'type': 'TATA 407', 'status': 'AVAILABLE', 'km': 84200},
-              {'no': 'AS01 RC 5206', 'type': 'TATA WATER TRUCK', 'status': 'ON_DUTY', 'km': 95100},
-              {'no': 'UP70 AG 3863', 'type': 'JETTING MACHINE', 'status': 'AVAILABLE', 'km': 12400},
-              {'no': 'AS01 DC 4000', 'type': 'TATA BUS', 'status': 'AVAILABLE', 'km': 142000},
-              {'no': 'AS01 DC 3020', 'type': 'TATA BUS', 'status': 'AVAILABLE', 'km': 138000},
-              {'no': 'TR01 JC 4424', 'type': 'SML P/VAN', 'status': 'AVAILABLE', 'km': 67500},
-              {'no': 'UP70 AG 3879', 'type': 'GARBAGE', 'status': 'AVAILABLE', 'km': 19800},
-              {'no': 'AS01 TC 0183', 'type': 'TATA TRUCK', 'status': 'AVAILABLE', 'km': 14500},
-              {'no': 'AS01 DD 5605', 'type': 'AMBULANCE', 'status': 'AVAILABLE', 'km': 118000},
-              {'no': 'AS01 FR 1039', 'type': 'M/C HUNTER 350', 'status': 'AVAILABLE', 'km': 8400},
-              {'no': 'TR01 AC 1665', 'type': 'SML (4x4)', 'status': 'AVAILABLE', 'km': 74000},
-              {'no': 'TR01 AC 1667', 'type': 'SML (4x4)', 'status': 'AVAILABLE', 'km': 79200},
-              {'no': 'CG04 MA 3688', 'type': 'TATA BUS', 'status': 'ON_DUTY', 'km': 31400},
-              {'no': 'AS01 TC 0197', 'type': 'TATA STAR BUS', 'status': 'AVAILABLE', 'km': 16700},
-              {'no': 'AS01 KC 5200', 'type': 'TATA 407', 'status': 'AVAILABLE', 'km': 81200},
-              {'no': 'TR01 G 1156', 'type': 'TATA 407', 'status': 'AVAILABLE', 'km': 73400},
-              {'no': 'AS01 TC 0256', 'type': 'A/LEYLAND W/TRUCK', 'status': 'AVAILABLE', 'km': 18900},
-              {'no': 'AS01 TC 8182', 'type': 'SML AMBULANCE', 'status': 'AVAILABLE', 'km': 21400},
-              {'no': 'MH40 BG 4125', 'type': 'TATA TRUCK', 'status': 'OFF_ROAD', 'km': 92000},
-              {'no': 'JK02 DK 7573', 'type': 'A/Leyland BUS', 'status': 'AVAILABLE', 'km': 84500},
-              {'no': 'AS01 DD 1809', 'type': 'TATA BUS', 'status': 'OFF_ROAD', 'km': 156000},
-              {'no': 'AS01 EL 1349', 'type': 'JCB', 'status': 'AVAILABLE', 'km': 14200},
-              {'no': 'TR01 Q 0986', 'type': 'TRACTOR', 'status': 'AVAILABLE', 'km': 3400},
-              {'no': 'TR01 C 1324', 'type': 'SML MINI BUS', 'status': 'AVAILABLE', 'km': 82100},
-              {'no': 'AS01 DC 5000', 'type': 'TATA BUS', 'status': 'AVAILABLE', 'km': 149000},
-              {'no': 'AS01 UC 1704', 'type': 'MAHINDRA TRUCK', 'status': 'AVAILABLE', 'km': 19200},
-              {'no': 'AS01 UC 1724', 'type': 'A/LEYLAND TRUCK', 'status': 'AVAILABLE', 'km': 22100},
-              {'no': 'AS01 RC 8830', 'type': 'TATA WATER TRUCK', 'status': 'AVAILABLE', 'km': 114000},
-              {'no': 'TR01 AW 0427', 'type': 'TATA SUMO', 'status': 'AVAILABLE', 'km': 87600},
-              {'no': 'AS01 RC 9782', 'type': 'A/LEYLAND TRUCK', 'status': 'AVAILABLE', 'km': 31200},
-              {'no': 'AS01 TC 0178', 'type': 'TATA TRUCK', 'status': 'AVAILABLE', 'km': 17500},
+              {'no': 'JK02 DK 7573', 'type': 'A/Leyland BUS', 'status': 'ATTACHED', 'attach_loc': 'IG OFFICE AGT'},
+              {'no': 'MH40 BG 4125', 'type': 'TATA TRUCK', 'status': 'ATTACHED', 'attach_loc': 'IG OFFICE AGT'},
+              {'no': 'AS01 NC 2289', 'type': 'TRACTOR', 'status': 'ATTACHED', 'attach_loc': 'IG OFFICE AGT'},
+              {'no': 'AS01 DC 3020', 'type': 'TATA BUS', 'status': 'ATTACHED', 'attach_loc': '71 BN'},
+              {'no': 'AS01 DD 1809', 'type': 'TATA BUS', 'status': 'ATTACHED', 'attach_loc': '124 BN'},
+              {'no': 'TR01 Q 0986', 'type': 'TRACTOR', 'status': 'ATTACHED', 'attach_loc': 'MANIPUR SECTOR HQ'},
+              {'no': 'AS01 FH 5372', 'type': 'TATA SAFARI', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 EG 8169', 'type': 'M/SCORPIO', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 GL 5719', 'type': 'M/BOLERO NEO', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 BS 1818', 'type': 'M/SWIFT DEZIRE', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'TR01 G 1154', 'type': 'EICHER', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'TR01 G 1155', 'type': 'EICHER', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 RC 9843', 'type': 'TATA STAR BUS', 'status': 'ON_DUTY', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 TU 6358', 'type': 'RECOVERY', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 JC 4423', 'type': 'TATA 407', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 RC 5206', 'type': 'TATA WATER TRUCK', 'status': 'ON_DUTY', 'attach_loc': 'GC AGT'},
+              {'no': 'UP70 AG 3863', 'type': 'JETTING MACHINE', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 DC 4000', 'type': 'TATA BUS', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'TR01 JC 4424', 'type': 'SML P/VAN', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'UP70 AG 3879', 'type': 'GARBAGE', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 TC 0183', 'type': 'TATA TRUCK', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 DD 5605', 'type': 'AMBULANCE', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 FR 1039', 'type': 'M/C HUNTER 350', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'TR01 AC 1665', 'type': 'SML (4x4)', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'TR01 AC 1667', 'type': 'SML (4x4)', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'CG04 MA 3688', 'type': 'TATA BUS', 'status': 'ON_DUTY', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 TC 0197', 'type': 'TATA STAR BUS', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 KC 5200', 'type': 'TATA 407', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'TR01 G 1156', 'type': 'TATA 407', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 TC 0256', 'type': 'A/LEYLAND W/TRUCK', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 TC 8182', 'type': 'SML AMBULANCE', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 EL 1349', 'type': 'JCB', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'TR01 C 1324', 'type': 'SML MINI BUS', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 DC 5000', 'type': 'TATA BUS', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 UC 1704', 'type': 'MAHINDRA TRUCK', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 UC 1724', 'type': 'A/LEYLAND TRUCK', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 RC 8830', 'type': 'TATA WATER TRUCK', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'TR01 AW 0427', 'type': 'TATA SUMO', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 RC 9782', 'type': 'A/LEYLAND TRUCK', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
+              {'no': 'AS01 TC 0178', 'type': 'TATA TRUCK', 'status': 'AVAILABLE', 'attach_loc': 'GC AGT'},
             ];
 
-            static List<Map<String, dynamic>> trips = [
-              {'vehicle': 'AS01 RC 9843', 'driver': 'CT/DVR VIKASH DUBEY', 'purpose': 'स्कूली ड्यूटी', 'status': 'ACTIVE', 'km': 28900},
-              {'vehicle': 'AS01 RC 5206', 'driver': 'HC/DVR DEBASHISH DEB', 'purpose': 'वाटर सप्लाई लाइन', 'status': 'ACTIVE', 'km': 95100},
+            // वाहन IN / OUT रिकॉर्ड्स
+            static List<Map<String, dynamic>> inOutLogs = [
+              {'vehicle': 'AS01 RC 9843', 'driver': 'CT/DVR VIKASH DUBEY', 'purpose': 'स्कूली ड्यूटी', 'status': 'OUT', 'out_time': '2026-07-24 07:30 AM', 'in_time': '-'},
+              {'vehicle': 'AS01 RC 5206', 'driver': 'HC/DVR DEBASHISH DEB', 'purpose': 'वाटर सप्लाई', 'status': 'OUT', 'out_time': '2026-07-24 08:00 AM', 'in_time': '-'},
+              {'vehicle': 'AS01 FH 5372', 'driver': 'HC/DVR RAKESH KUMAR', 'purpose': 'एयरपोर्ट ड्यूटी', 'status': 'IN', 'out_time': '2026-07-23 09:15 AM', 'in_time': '2026-07-23 01:45 PM'},
             ];
 
             static List<Map<String, dynamic>> leaves = [
@@ -182,7 +369,7 @@ jobs:
               );
 
               if (staff.isNotEmpty) {
-                final expectedPass = 'Mt@${staff['force']}';
+                final expectedPass = MTData.passwords[staff['force']] ?? 'Mt@${staff['force']}';
                 if (pass == expectedPass) {
                   Navigator.pushReplacement(
                     context,
@@ -193,7 +380,7 @@ jobs:
               }
 
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('गलत फोर्स नंबर या पासवर्ड! पासवर्ड "Mt@फोर्सनंबर" है।')),
+                const SnackBar(content: Text('गलत फोर्स नंबर या पासवर्ड!')),
               );
             }
 
@@ -221,7 +408,7 @@ jobs:
                           textAlign: TextAlign.center,
                           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B3B6F)),
                         ),
-                        const Text('वाहन, डिजिटल लॉग बुक एवं स्टाफ रिकॉर्ड', style: TextStyle(color: Colors.grey)),
+                        const Text('वाहन, बायोडाटा एवं उपस्थिति प्रणाली', style: TextStyle(color: Colors.grey)),
                         const SizedBox(height: 24),
                         Card(
                           elevation: 4,
@@ -243,7 +430,7 @@ jobs:
                                   controller: _passCtrl,
                                   obscureText: _obscure,
                                   decoration: InputDecoration(
-                                    labelText: 'पासवर्ड (उदा. Mt@165060166)',
+                                    labelText: 'पासवर्ड (Mt@फोर्सनंबर)',
                                     prefixIcon: const Icon(Icons.lock),
                                     suffixIcon: IconButton(
                                       icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
@@ -275,9 +462,9 @@ jobs:
                           child: const Padding(
                             padding: EdgeInsets.all(10.0),
                             child: Text(
-                              'मुख्य एडमिन आईडी:\nफोर्स नं: 165060166 (CT/DVR VIKASH DUBEY)\nपासवर्ड: Mt@165060166',
+                              'एम टी राइटर (एडमिन):\nफोर्स नं: 165060166 (VIKASH DUBEY)\nपासवर्ड: Mt@165060166',
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1B3B6F)),
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1B3B6F)),
                             ),
                           ),
                         ),
@@ -299,25 +486,75 @@ jobs:
           }
 
           class _DashboardScreenState extends State<DashboardScreen> {
+            void _changePasswordDialog() {
+              final oldPassCtrl = TextEditingController();
+              final newPassCtrl = TextEditingController();
+
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('पासवर्ड बदलें (Change Password)'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(controller: oldPassCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'पुराना पासवर्ड')),
+                      const SizedBox(height: 10),
+                      TextField(controller: newPassCtrl, obscureText: true, decoration: const InputDecoration(labelText: 'नया पासवर्ड')),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करें')),
+                    ElevatedButton(
+                      onPressed: () {
+                        final currentPass = MTData.passwords[widget.currentUser['force']] ?? 'Mt@${widget.currentUser['force']}';
+                        if (oldPassCtrl.text.trim() == currentPass) {
+                          if (newPassCtrl.text.trim().isNotEmpty) {
+                            setState(() {
+                              MTData.passwords[widget.currentUser['force']] = newPassCtrl.text.trim();
+                            });
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('पासवर्ड सफलतापूर्वक बदल दिया गया है!')),
+                            );
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('पुराना पासवर्ड गलत है!')),
+                          );
+                        }
+                      },
+                      child: const Text('अपडेट करें'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
             @override
             Widget build(BuildContext context) {
               final user = widget.currentUser;
-              final bool isAdmin = user['role'] == 'ADMIN';
+              final bool isAdmin = user['force'] == '165060166';
 
               final availVehicles = MTData.vehicles.where((v) => v['status'] == 'AVAILABLE').length;
               final dutyVehicles = MTData.vehicles.where((v) => v['status'] == 'ON_DUTY').length;
-              final offVehicles = MTData.vehicles.where((v) => v['status'] == 'OFF_ROAD').length;
+              final attachedVehicles = MTData.vehicles.where((v) => v['status'] == 'ATTACHED').length;
 
-              final presentStaff = MTData.staffList.where((s) => s['status'] == 'PRESENT' || s['status'] == 'ON_DUTY').length;
+              final presentStaff = MTData.staffList.where((s) => s['status'] == 'PRESENT').length;
+              final attachedStaff = MTData.staffList.where((s) => s['status'] == 'ATTACHED' || s['status'] == 'GOVT_DUTY').length;
               final leaveStaff = MTData.staffList.where((s) => s['status'] == 'LEAVE').length;
 
               return Scaffold(
                 backgroundColor: const Color(0xFFF7F9FC),
                 appBar: AppBar(
-                  title: Text(isAdmin ? 'एम टी एडमिन पोर्टल (MTO Control)' : 'एम टी स्टाफ डैशबोर्ड'),
+                  title: Text(isAdmin ? 'एम टी राइटर (ADMIN)' : 'एम टी पोर्टल'),
                   backgroundColor: const Color(0xFF1B3B6F),
                   foregroundColor: Colors.white,
                   actions: [
+                    IconButton(
+                      icon: const Icon(Icons.key),
+                      tooltip: 'पासवर्ड बदलें',
+                      onPressed: _changePasswordDialog,
+                    ),
                     IconButton(
                       icon: const Icon(Icons.logout),
                       onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
@@ -337,34 +574,34 @@ jobs:
                             child: Icon(isAdmin ? Icons.admin_panel_settings : Icons.person, color: Colors.white),
                           ),
                           title: Text('${user['rank']} ${user['name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('फोर्स सं: ${user['force']} | रोल: ${isAdmin ? "सुपर एडमिन (CONTROL)" : "स्टाफ"}'),
+                          subtitle: Text('रोल: ${user['role']} | फोर्स: ${user['force']}\nबकाया अवकाश: EL: ${user['el_bal']} दिन | CL: ${user['cl_bal']} दिन'),
                           trailing: Chip(
                             label: Text(user['status']),
                             backgroundColor: Colors.green.shade100,
-                            labelStyle: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                            labelStyle: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 11),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text('एम टी परेड स्टेट (Parade State)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text('एम टी परेड स्टेट (MT Parade State)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           _statCard('उपलब्ध गाड़ियां', '$availVehicles', Colors.teal),
-                          _statCard('ड्यूटी पर', '$dutyVehicles', Colors.blue),
-                          _statCard('ऑफ-रोड (मरम्मत)', '$offVehicles', Colors.red),
+                          _statCard('ड्यूटी पर गाड़ियां', '$dutyVehicles', Colors.blue),
+                          _statCard('अटैच गाड़ियां', '$attachedVehicles', Colors.purple),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           _statCard('स्टाफ उपस्थित', '$presentStaff', Colors.green),
+                          _statCard('अटैच / गॉव ड्यूटी', '$attachedStaff', Colors.indigo),
                           _statCard('अवकाश पर (Leave)', '$leaveStaff', Colors.orange),
-                          _statCard('कुल वाहन', '${MTData.vehicles.length}', Colors.indigo),
                         ],
                       ),
                       const SizedBox(height: 20),
-                      Text(isAdmin ? 'प्रबंधन सुविधाएं (Admin Panel)' : 'सेवाएं एवं रिकॉर्ड्स', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(isAdmin ? 'एडमिन प्रबंधन पैनल' : 'सुविधाएं व रिकॉर्ड्स', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 10),
                       GridView.count(
                         crossAxisCount: 2,
@@ -374,10 +611,10 @@ jobs:
                         mainAxisSpacing: 10,
                         childAspectRatio: 1.15,
                         children: [
-                          _menuBtn(Icons.directions_car, 'गाड़ियां (${MTData.vehicles.length})', Colors.indigo, 'जोड़ें, हटाएं व बदलें', () => _openVehicles(isAdmin)),
-                          _menuBtn(Icons.people, 'स्टाफ (${MTData.staffList.length})', Colors.teal, 'जोड़ें, हटाएं व रोल कॉल', () => _openStaff(isAdmin)),
-                          _menuBtn(Icons.event_note, 'अवकाश प्रबंधन', Colors.deepOrange, isAdmin ? 'छुट्टी अप्रूव/रिजेक्ट करें' : 'छुट्टी अर्जी व स्टेटस', () => _openLeaves(isAdmin)),
-                          _menuBtn(Icons.history_edu, 'डिजिटल लॉग बुक', Colors.blue, 'गाड़ी आउट व इन एंट्री', () => _openLogBook(isAdmin)),
+                          _menuBtn(Icons.directions_car, 'गाड़ियां (${MTData.vehicles.length})', Colors.indigo, 'अटैच, जोड़ें व हटाएं', () => _openVehicles(isAdmin)),
+                          _menuBtn(Icons.badge, 'स्टाफ बायोडाटा (${MTData.staffList.length})', Colors.teal, 'नाम पर क्लिक करके पूरा बायोडाटा देखें', () => _openStaff(isAdmin)),
+                          _menuBtn(Icons.compare_arrows, 'वाहन IN / OUT', Colors.blue, 'तारीख व समय अनुसार रवानगी', () => _openInOutLogs(isAdmin)),
+                          _menuBtn(Icons.event_note, 'अवकाश प्रबंधन', Colors.deepOrange, isAdmin ? 'छुट्टी अप्रूवल (Approve/Reject)' : 'छुट्टी अर्जी व स्टेटस', () => _openLeaves(isAdmin)),
                         ],
                       ),
                     ],
@@ -394,7 +631,7 @@ jobs:
                     child: Column(
                       children: [
                         Text(c, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: col)),
-                        Text(t, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
+                        Text(t, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -423,7 +660,7 @@ jobs:
               );
             }
 
-            // 1. VEHICLES: ADD, EDIT, DELETE
+            // 1. VEHICLE MANAGEMENT
             void _openVehicles(bool isAdmin) {
               showModalBottomSheet(
                 context: context,
@@ -443,7 +680,7 @@ jobs:
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
                                 icon: const Icon(Icons.add, size: 16),
-                                label: const Text('नई गाड़ी जोड़ें'),
+                                label: const Text('नई गाड़ी'),
                                 onPressed: () {
                                   _addOrEditVehicleDialog(ctx, null, () {
                                     setSheetState(() {});
@@ -461,6 +698,7 @@ jobs:
                               final v = MTData.vehicles[i];
                               Color col = Colors.green;
                               if (v['status'] == 'ON_DUTY') col = Colors.blue;
+                              if (v['status'] == 'ATTACHED') col = Colors.purple;
                               if (v['status'] == 'OFF_ROAD') col = Colors.red;
 
                               return Card(
@@ -471,7 +709,7 @@ jobs:
                                     child: Icon(Icons.directions_car, color: col),
                                   ),
                                   title: Text('${v['no']} (${v['type']})', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('मीटर रीडिंग: ${v['km']} KM | स्थिति: ${v['status']}'),
+                                  subtitle: Text('स्थिति: ${v['status']} | लोकेशन: ${v['attach_loc']}'),
                                   trailing: isAdmin
                                       ? Row(
                                           mainAxisSize: MainAxisSize.min,
@@ -515,7 +753,7 @@ jobs:
               final isEdit = vehicle != null;
               final noCtrl = TextEditingController(text: isEdit ? vehicle['no'] : '');
               final typeCtrl = TextEditingController(text: isEdit ? vehicle['type'] : '');
-              final kmCtrl = TextEditingController(text: isEdit ? '${vehicle['km']}' : '');
+              final locCtrl = TextEditingController(text: isEdit ? vehicle['attach_loc'] : 'GC AGT');
               String status = isEdit ? vehicle['status'] : 'AVAILABLE';
 
               showDialog(
@@ -528,13 +766,13 @@ jobs:
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           TextField(controller: noCtrl, decoration: const InputDecoration(labelText: 'गाड़ी नंबर (उदा. TR01-G-1154)')),
-                          TextField(controller: typeCtrl, decoration: const InputDecoration(labelText: 'प्रकार (उदा. Tata 407, Gypsy, Bus)')),
-                          TextField(controller: kmCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'मीटर रीडिंग (KM)')),
+                          TextField(controller: typeCtrl, decoration: const InputDecoration(labelText: 'प्रकार (उदा. Tata 407, Bus, Gypsy)')),
+                          TextField(controller: locCtrl, decoration: const InputDecoration(labelText: 'अटैच लोकेशन (उदा. IG Office, 71 Bn)')),
                           const SizedBox(height: 10),
                           DropdownButtonFormField<String>(
                             value: status,
-                            decoration: const InputDecoration(labelText: 'स्थिति (Status)'),
-                            items: ['AVAILABLE', 'ON_DUTY', 'OFF_ROAD'].map((st) => DropdownMenuItem(value: st, child: Text(st))).toList(),
+                            decoration: const InputDecoration(labelText: 'स्थिति'),
+                            items: ['AVAILABLE', 'ON_DUTY', 'ATTACHED', 'OFF_ROAD'].map((st) => DropdownMenuItem(value: st, child: Text(st))).toList(),
                             onChanged: (val) => setDlgState(() => status = val!),
                           ),
                         ],
@@ -548,13 +786,13 @@ jobs:
                             if (isEdit) {
                               vehicle['no'] = noCtrl.text.trim().toUpperCase();
                               vehicle['type'] = typeCtrl.text.trim().toUpperCase();
-                              vehicle['km'] = int.tryParse(kmCtrl.text) ?? 0;
+                              vehicle['attach_loc'] = locCtrl.text.trim().toUpperCase();
                               vehicle['status'] = status;
                             } else {
                               MTData.vehicles.insert(0, {
                                 'no': noCtrl.text.trim().toUpperCase(),
                                 'type': typeCtrl.text.trim().toUpperCase(),
-                                'km': int.tryParse(kmCtrl.text) ?? 0,
+                                'attach_loc': locCtrl.text.trim().toUpperCase(),
                                 'status': status,
                               });
                             }
@@ -570,7 +808,7 @@ jobs:
               );
             }
 
-            // 2. STAFF: ADD, EDIT, DELETE & STATUS CHANGE
+            // 2. STAFF MANAGEMENT & FULL BIO-DATA (PHOTO & DATA EDIT)
             void _openStaff(bool isAdmin) {
               showModalBottomSheet(
                 context: context,
@@ -585,12 +823,12 @@ jobs:
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('एम टी स्टाफ सूची (${MTData.staffList.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text('एम टी स्टाफ (${MTData.staffList.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                             if (isAdmin)
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
                                 icon: const Icon(Icons.person_add, size: 16),
-                                label: const Text('नया स्टाफ जोड़ें'),
+                                label: const Text('नया स्टाफ'),
                                 onPressed: () {
                                   _addOrEditStaffDialog(ctx, null, () {
                                     setSheetState(() {});
@@ -600,6 +838,8 @@ jobs:
                               ),
                           ],
                         ),
+                        const SizedBox(height: 4),
+                        const Text('बायोडाटा देखने के लिए किसी भी कार्मिक के नाम पर क्लिक करें', style: TextStyle(fontSize: 11, color: Colors.blueGrey)),
                         const Divider(),
                         Expanded(
                           child: ListView.builder(
@@ -607,45 +847,29 @@ jobs:
                             itemBuilder: (ctx, i) {
                               final s = MTData.staffList[i];
                               Color statusCol = Colors.green;
+                              if (s['status'] == 'ATTACHED') statusCol = Colors.purple;
+                              if (s['status'] == 'GOVT_DUTY') statusCol = Colors.indigo;
                               if (s['status'] == 'LEAVE') statusCol = Colors.orange;
-                              if (s['status'] == 'SICK') statusCol = Colors.red;
+
+                              final bool hasPhoto = s['photo'] != null && s['photo'].toString().isNotEmpty;
 
                               return Card(
                                 margin: const EdgeInsets.symmetric(vertical: 4),
                                 child: ListTile(
+                                  onTap: () {
+                                    _viewBioDataDialog(ctx, s, isAdmin, () {
+                                      setSheetState(() {});
+                                      setState(() {});
+                                    });
+                                  },
                                   leading: CircleAvatar(
-                                    backgroundColor: s['role'] == 'ADMIN' ? Colors.deepOrange : Colors.indigo,
-                                    child: Text(s['name'][0], style: const TextStyle(color: Colors.white)),
+                                    backgroundColor: s['role'].toString().contains('ADMIN') ? Colors.deepOrange : Colors.indigo,
+                                    backgroundImage: hasPhoto ? NetworkImage(s['photo']) : null,
+                                    child: !hasPhoto ? Text(s['name'][0], style: const TextStyle(color: Colors.white)) : null,
                                   ),
                                   title: Text('${s['rank']} ${s['name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('फोर्स सं: ${s['force']} | मो: ${s['mobile']}\nस्थिति: ${s['status']}'),
-                                  trailing: isAdmin && s['force'] != '165060166'
-                                      ? Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
-                                              onPressed: () {
-                                                _addOrEditStaffDialog(ctx, s, () {
-                                                  setSheetState(() {});
-                                                  setState(() {});
-                                                });
-                                              },
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                              onPressed: () {
-                                                _confirmDelete(ctx, '${s['rank']} ${s['name']}', () {
-                                                  setSheetState(() {
-                                                    MTData.staffList.removeAt(i);
-                                                  });
-                                                  setState(() {});
-                                                });
-                                              },
-                                            ),
-                                          ],
-                                        )
-                                      : Chip(label: Text(s['status'], style: const TextStyle(fontSize: 10))),
+                                  subtitle: Text('रोल: ${s['role']} | फोर्स सं: ${s['force']}\nस्थिति: ${s['status']} (${s['location']})'),
+                                  trailing: const Icon(Icons.chevron_right),
                                 ),
                               );
                             },
@@ -658,33 +882,200 @@ jobs:
               );
             }
 
+            // बायोडाटा कार्ड (Photo Add/Remove and Edit Data)
+            void _viewBioDataDialog(BuildContext ctx, Map<String, dynamic> staff, bool isAdmin, VoidCallback onUpdated) {
+              showDialog(
+                context: ctx,
+                builder: (bCtx) => StatefulBuilder(
+                  builder: (bCtx, setBioState) {
+                    final bool hasPhoto = staff['photo'] != null && staff['photo'].toString().isNotEmpty;
+
+                    return AlertDialog(
+                      title: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 26,
+                            backgroundColor: Colors.indigo,
+                            backgroundImage: hasPhoto ? NetworkImage(staff['photo']) : null,
+                            child: !hasPhoto ? Text(staff['name'][0], style: const TextStyle(fontSize: 22, color: Colors.white)) : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${staff['rank']} ${staff['name']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                Text('फोर्स सं: ${staff['force']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
+                      content: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Divider(),
+                            _bioRow('पद / रोल', staff['role']),
+                            _bioRow('दैनिक स्थिति', staff['status']),
+                            _bioRow('वर्तमान स्थान', staff['location']),
+                            _bioRow('मोबाइल नंबर', staff['mobile']),
+                            _bioRow('ड्राइविंग लाइसेंस', staff['dl_no'] ?? 'N/A'),
+                            _bioRow('ब्लड ग्रुप', staff['blood'] ?? 'B+'),
+                            _bioRow('गृह राज्य', staff['state'] ?? 'N/A'),
+                            const Divider(),
+                            Text('अवकाश कोटा (Leave Balance):', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text('अर्जित अवकाश (EL): ${staff['el_bal']} / 60 दिन', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                            Text('आकस्मिक अवकाश (CL): ${staff['cl_bal']} / 15 दिन', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+                            if (isAdmin) ...[
+                              const Divider(),
+                              const Text('फोटो प्रबंधन (Admin Photo Control):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+                                    icon: const Icon(Icons.add_a_photo, size: 14),
+                                    label: const Text('फोटो लिंक जोड़ें', style: TextStyle(fontSize: 11)),
+                                    onPressed: () {
+                                      _editPhotoDialog(bCtx, staff, () {
+                                        setBioState(() {});
+                                        onUpdated();
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(width: 6),
+                                  if (hasPhoto)
+                                    OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                                      icon: const Icon(Icons.delete, size: 14),
+                                      label: const Text('हटाएं', style: TextStyle(fontSize: 11)),
+                                      onPressed: () {
+                                        setBioState(() {
+                                          staff['photo'] = '';
+                                        });
+                                        onUpdated();
+                                      },
+                                    ),
+                                ],
+                              )
+                            ],
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        if (isAdmin && staff['force'] != '165060166')
+                          TextButton(
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                            onPressed: () {
+                              Navigator.pop(bCtx);
+                              _confirmDelete(ctx, '${staff['rank']} ${staff['name']}', () {
+                                MTData.staffList.remove(staff);
+                                onUpdated();
+                              });
+                            },
+                            child: const Text('हटाएं (Delete)'),
+                          ),
+                        if (isAdmin)
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(bCtx);
+                              _addOrEditStaffDialog(ctx, staff, onUpdated);
+                            },
+                            child: const Text('एडिट करें'),
+                          ),
+                        TextButton(onPressed: () => Navigator.pop(bCtx), child: const Text('बंद करें')),
+                      ],
+                    );
+                  },
+                ),
+              );
+            }
+
+            void _editPhotoDialog(BuildContext ctx, Map<String, dynamic> staff, VoidCallback onPhotoSet) {
+              final photoCtrl = TextEditingController(text: staff['photo'] ?? '');
+              showDialog(
+                context: ctx,
+                builder: (pCtx) => AlertDialog(
+                  title: const Text('कार्मिक फोटो URL दर्ज करें'),
+                  content: TextField(
+                    controller: photoCtrl,
+                    decoration: const InputDecoration(labelText: 'इमेज URL (उदा. https://.../photo.jpg)'),
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(pCtx), child: const Text('रद्द करें')),
+                    ElevatedButton(
+                      onPressed: () {
+                        staff['photo'] = photoCtrl.text.trim();
+                        Navigator.pop(pCtx);
+                        onPhotoSet();
+                      },
+                      child: const Text('सुरक्षित करें'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            Widget _bioRow(String label, String value) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(label, style: const TextStyle(color: Colors.blueGrey, fontSize: 13)),
+                    Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ],
+                ),
+              );
+            }
+
             void _addOrEditStaffDialog(BuildContext ctx, Map<String, dynamic>? staff, VoidCallback onSuccess) {
               final isEdit = staff != null;
               final forceCtrl = TextEditingController(text: isEdit ? staff['force'] : '');
               final nameCtrl = TextEditingController(text: isEdit ? staff['name'] : '');
               final rankCtrl = TextEditingController(text: isEdit ? staff['rank'] : 'CT/DVR');
+              final roleCtrl = TextEditingController(text: isEdit ? staff['role'] : 'STAFF');
               final mobCtrl = TextEditingController(text: isEdit ? staff['mobile'] : '');
+              final locCtrl = TextEditingController(text: isEdit ? staff['location'] : 'GC AGT');
+              final dlCtrl = TextEditingController(text: isEdit ? (staff['dl_no'] ?? '') : '');
+              final bloodCtrl = TextEditingController(text: isEdit ? (staff['blood'] ?? 'B+') : 'B+');
+              final stateCtrl = TextEditingController(text: isEdit ? (staff['state'] ?? '') : '');
+              final elCtrl = TextEditingController(text: isEdit ? '${staff['el_bal']}' : '60');
+              final clCtrl = TextEditingController(text: isEdit ? '${staff['cl_bal']}' : '15');
               String status = isEdit ? staff['status'] : 'PRESENT';
 
               showDialog(
                 context: ctx,
                 builder: (dCtx) => StatefulBuilder(
                   builder: (dCtx, setDlgState) => AlertDialog(
-                    title: Text(isEdit ? 'स्टाफ का विवरण बदलें' : 'नया स्टाफ जोड़ें'),
+                    title: Text(isEdit ? 'स्टाफ एवं बायोडाटा बदलें' : 'नया स्टाफ जोड़ें'),
                     content: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          TextField(controller: forceCtrl, enabled: !isEdit, decoration: const InputDecoration(labelText: 'फोर्स नंबर (User ID)')),
+                          TextField(controller: forceCtrl, enabled: !isEdit, decoration: const InputDecoration(labelText: 'फोर्स नंबर')),
                           TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'पूरा नाम')),
-                          TextField(controller: rankCtrl, decoration: const InputDecoration(labelText: 'पद / रैंक (उदा. HC/DVR, CT/DVR)')),
+                          TextField(controller: rankCtrl, decoration: const InputDecoration(labelText: 'रैंक (Rank)')),
+                          TextField(controller: roleCtrl, decoration: const InputDecoration(labelText: 'रोल / पद (उदा. MT HAVILDAR)')),
                           TextField(controller: mobCtrl, decoration: const InputDecoration(labelText: 'मोबाइल नंबर')),
+                          TextField(controller: dlCtrl, decoration: const InputDecoration(labelText: 'ड्राइविंग लाइसेंस नंबर')),
+                          TextField(controller: bloodCtrl, decoration: const InputDecoration(labelText: 'ब्लड ग्रुप (उदा. B+, O+)')),
+                          TextField(controller: stateCtrl, decoration: const InputDecoration(labelText: 'गृह राज्य (State)')),
                           const SizedBox(height: 10),
                           DropdownButtonFormField<String>(
                             value: status,
-                            decoration: const InputDecoration(labelText: 'दैनिक उपस्थिति स्थिति'),
-                            items: ['PRESENT', 'ON_DUTY', 'LEAVE', 'SICK', 'REST'].map((st) => DropdownMenuItem(value: st, child: Text(st))).toList(),
+                            decoration: const InputDecoration(labelText: 'स्थिति (Duty State)'),
+                            items: ['PRESENT', 'ATTACHED', 'GOVT_DUTY', 'LEAVE', 'SICK', 'REST'].map((st) => DropdownMenuItem(value: st, child: Text(st))).toList(),
                             onChanged: (val) => setDlgState(() => status = val!),
+                          ),
+                          TextField(controller: locCtrl, decoration: const InputDecoration(labelText: 'कहाँ गया है / लोकेशन (उदा. IG TPA)')),
+                          Row(
+                            children: [
+                              Expanded(child: TextField(controller: elCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'बकाया EL'))),
+                              const SizedBox(width: 8),
+                              Expanded(child: TextField(controller: clCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'बकाया CL'))),
+                            ],
                           ),
                         ],
                       ),
@@ -697,16 +1088,30 @@ jobs:
                             if (isEdit) {
                               staff['name'] = nameCtrl.text.trim().toUpperCase();
                               staff['rank'] = rankCtrl.text.trim().toUpperCase();
+                              staff['role'] = roleCtrl.text.trim().toUpperCase();
                               staff['mobile'] = mobCtrl.text.trim();
+                              staff['dl_no'] = dlCtrl.text.trim().toUpperCase();
+                              staff['blood'] = bloodCtrl.text.trim().toUpperCase();
+                              staff['state'] = stateCtrl.text.trim().toUpperCase();
                               staff['status'] = status;
+                              staff['location'] = locCtrl.text.trim().toUpperCase();
+                              staff['el_bal'] = int.tryParse(elCtrl.text) ?? 60;
+                              staff['cl_bal'] = int.tryParse(clCtrl.text) ?? 15;
                             } else {
                               MTData.staffList.add({
                                 'force': forceCtrl.text.trim(),
                                 'name': nameCtrl.text.trim().toUpperCase(),
                                 'rank': rankCtrl.text.trim().toUpperCase(),
+                                'role': roleCtrl.text.trim().toUpperCase(),
                                 'mobile': mobCtrl.text.trim(),
-                                'role': 'STAFF',
+                                'dl_no': dlCtrl.text.trim().toUpperCase(),
+                                'blood': bloodCtrl.text.trim().toUpperCase(),
+                                'state': stateCtrl.text.trim().toUpperCase(),
                                 'status': status,
+                                'location': locCtrl.text.trim().toUpperCase(),
+                                'el_bal': int.tryParse(elCtrl.text) ?? 60,
+                                'cl_bal': int.tryParse(clCtrl.text) ?? 15,
+                                'photo': '',
                               });
                             }
                             Navigator.pop(dCtx);
@@ -721,7 +1126,154 @@ jobs:
               );
             }
 
-            // 3. LEAVE APPROVAL / REJECTION
+            // 3. VEHICLE IN / OUT (DATE & TIME WISE)
+            void _openInOutLogs(bool isAdmin) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setSheetState) => Container(
+                    height: MediaQuery.of(ctx).size.height * 0.88,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('वाहन IN / OUT रजिस्टर', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
+                              icon: const Icon(Icons.exit_to_app, size: 16),
+                              label: const Text('गाड़ी OUT करें'),
+                              onPressed: () => _addOutDialog(ctx, () {
+                                setSheetState(() {});
+                                setState(() {});
+                              }),
+                            ),
+                          ],
+                        ),
+                        const Divider(),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: MTData.inOutLogs.length,
+                            itemBuilder: (ctx, i) {
+                              final log = MTData.inOutLogs[i];
+                              final bool isOut = log['status'] == 'OUT';
+
+                              return Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(log['vehicle'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                          Chip(
+                                            label: Text(log['status']),
+                                            backgroundColor: isOut ? Colors.amber.shade100 : Colors.green.shade100,
+                                            labelStyle: TextStyle(fontWeight: FontWeight.bold, color: isOut ? Colors.brown : Colors.green),
+                                          )
+                                        ],
+                                      ),
+                                      Text('चालक: ${log['driver']} | ड्यूटी: ${log['purpose']}'),
+                                      const SizedBox(height: 4),
+                                      Text('OUT समय: ${log['out_time']}'),
+                                      Text('IN समय: ${log['in_time']}'),
+                                      if (isOut)
+                                        Align(
+                                          alignment: Alignment.centerRight,
+                                          child: ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                                            icon: const Icon(Icons.login, size: 16),
+                                            label: const Text('गाड़ी IN करें'),
+                                            onPressed: () {
+                                              final now = DateTime.now();
+                                              setSheetState(() {
+                                                log['status'] = 'IN';
+                                                log['in_time'] = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+                                              });
+                                              setState(() {});
+                                            },
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            void _addOutDialog(BuildContext ctx, VoidCallback onAdded) {
+              String selectedVeh = MTData.vehicles[0]['no'];
+              String selectedDvr = MTData.staffList[0]['name'];
+              final purCtrl = TextEditingController();
+
+              showDialog(
+                context: ctx,
+                builder: (dCtx) => StatefulBuilder(
+                  builder: (dCtx, setDlg) => AlertDialog(
+                    title: const Text('गाड़ी OUT दर्ज करें'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          value: selectedVeh,
+                          decoration: const InputDecoration(labelText: 'गाड़ी चुनें'),
+                          items: MTData.vehicles.map<DropdownMenuItem<String>>((v) {
+                            return DropdownMenuItem(value: v['no'] as String, child: Text(v['no'] as String, style: const TextStyle(fontSize: 12)));
+                          }).toList(),
+                          onChanged: (val) => setDlg(() => selectedVeh = val!),
+                        ),
+                        DropdownButtonFormField<String>(
+                          value: selectedDvr,
+                          decoration: const InputDecoration(labelText: 'ड्राइवर चुनें'),
+                          items: MTData.staffList.map<DropdownMenuItem<String>>((s) {
+                            return DropdownMenuItem(value: s['name'] as String, child: Text('${s['rank']} ${s['name']}', style: const TextStyle(fontSize: 12)));
+                          }).toList(),
+                          onChanged: (val) => setDlg(() => selectedDvr = val!),
+                        ),
+                        TextField(controller: purCtrl, decoration: const InputDecoration(labelText: 'ड्यूटी का उद्देश्य (Purpose)')),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('रद्द करें')),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (purCtrl.text.isNotEmpty) {
+                            final now = DateTime.now();
+                            final timeStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+
+                            MTData.inOutLogs.insert(0, {
+                              'vehicle': selectedVeh,
+                              'driver': selectedDvr,
+                              'purpose': purCtrl.text.trim(),
+                              'status': 'OUT',
+                              'out_time': timeStr,
+                              'in_time': '-'
+                            });
+                            Navigator.pop(dCtx);
+                            onAdded();
+                          }
+                        },
+                        child: const Text('OUT दर्ज करें'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // 4. LEAVE APPROVAL & BALANCE DEDUCTION
             void _openLeaves(bool isAdmin) {
               showModalBottomSheet(
                 context: context,
@@ -792,7 +1344,14 @@ jobs:
                                                   setSheetState(() {
                                                     l['status'] = 'APPROVED';
                                                     final staff = MTData.staffList.firstWhere((s) => s['force'] == l['force'], orElse: () => {});
-                                                    if (staff.isNotEmpty) staff['status'] = 'LEAVE';
+                                                    if (staff.isNotEmpty) {
+                                                      staff['status'] = 'LEAVE';
+                                                      if (l['type'] == 'EL' && staff['el_bal'] >= l['days']) {
+                                                        staff['el_bal'] -= l['days'];
+                                                      } else if (l['type'] == 'CL' && staff['cl_bal'] >= l['days']) {
+                                                        staff['cl_bal'] -= l['days'];
+                                                      }
+                                                    }
                                                   });
                                                   setState(() {});
                                                 },
@@ -861,125 +1420,6 @@ jobs:
               );
             }
 
-            // 4. DIGITAL LOGBOOK
-            void _openLogBook(bool isAdmin) {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                builder: (ctx) => StatefulBuilder(
-                  builder: (ctx, setSheetState) => Container(
-                    height: MediaQuery.of(ctx).size.height * 0.88,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('डिजिटल लॉग बुक (कार पास)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
-                              icon: const Icon(Icons.add, size: 16),
-                              label: const Text('गाड़ी आउट करें'),
-                              onPressed: () => _addTripDialog(ctx, () {
-                                setSheetState(() {});
-                                setState(() {});
-                              }),
-                            ),
-                          ],
-                        ),
-                        const Divider(),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: MTData.trips.length,
-                            itemBuilder: (ctx, i) {
-                              final t = MTData.trips[i];
-                              final bool isActive = t['status'] == 'ACTIVE';
-
-                              return Card(
-                                child: ListTile(
-                                  title: Text('${t['vehicle']} - ${t['purpose']}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: Text('चालक: ${t['driver']} | ओपनिंग KM: ${t['km']}'),
-                                  trailing: isActive
-                                      ? ElevatedButton(
-                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
-                                          onPressed: () {
-                                            setSheetState(() {
-                                              t['status'] = 'COMPLETED';
-                                            });
-                                            setState(() {});
-                                          },
-                                          child: const Text('वापसी (In)'),
-                                        )
-                                      : const Chip(label: Text('वापस (In)')),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            void _addTripDialog(BuildContext ctx, VoidCallback onAdded) {
-              String selectedVeh = MTData.vehicles[0]['no'];
-              String selectedDvr = MTData.staffList[0]['name'];
-              final purCtrl = TextEditingController();
-
-              showDialog(
-                context: ctx,
-                builder: (dCtx) => StatefulBuilder(
-                  builder: (dCtx, setDlg) => AlertDialog(
-                    title: const Text('गाड़ी रवानगी (Trip Out)'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        DropdownButtonFormField<String>(
-                          value: selectedVeh,
-                          decoration: const InputDecoration(labelText: 'गाड़ी चुनें'),
-                          items: MTData.vehicles.map<DropdownMenuItem<String>>((v) {
-                            return DropdownMenuItem(value: v['no'] as String, child: Text(v['no'] as String, style: const TextStyle(fontSize: 12)));
-                          }).toList(),
-                          onChanged: (val) => setDlg(() => selectedVeh = val!),
-                        ),
-                        DropdownButtonFormField<String>(
-                          value: selectedDvr,
-                          decoration: const InputDecoration(labelText: 'ड्राइवर चुनें'),
-                          items: MTData.staffList.map<DropdownMenuItem<String>>((s) {
-                            return DropdownMenuItem(value: s['name'] as String, child: Text('${s['rank']} ${s['name']}', style: const TextStyle(fontSize: 12)));
-                          }).toList(),
-                          onChanged: (val) => setDlg(() => selectedDvr = val!),
-                        ),
-                        TextField(controller: purCtrl, decoration: const InputDecoration(labelText: 'ड्यूटी का उद्देश्य')),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('रद्द करें')),
-                      ElevatedButton(
-                        onPressed: () {
-                          if (purCtrl.text.isNotEmpty) {
-                            MTData.trips.insert(0, {
-                              'vehicle': selectedVeh,
-                              'driver': selectedDvr,
-                              'purpose': purCtrl.text.trim(),
-                              'status': 'ACTIVE',
-                              'km': 0
-                            });
-                            Navigator.pop(dCtx);
-                            onAdded();
-                          }
-                        },
-                        child: const Text('आउट दर्ज करें'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
             void _confirmDelete(BuildContext ctx, String itemName, VoidCallback onDelete) {
               showDialog(
                 context: ctx,
@@ -1011,5 +1451,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MT_GC_Agartala_Admin_VikashDubey_APK
+          name: MT_GC_Agartala_Full_Control_APK
           path: mt_app/build/app/outputs/flutter-apk/app-release.apk
