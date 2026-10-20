@@ -126,4 +126,890 @@ jobs:
               {'no': 'AS01 DD 5605', 'type': 'AMBULANCE', 'status': 'AVAILABLE', 'km': 118000},
               {'no': 'AS01 FR 1039', 'type': 'M/C HUNTER 350', 'status': 'AVAILABLE', 'km': 8400},
               {'no': 'TR01 AC 1665', 'type': 'SML (4x4)', 'status': 'AVAILABLE', 'km': 74000},
-              {'no': 'TR01 AC 1667', 'type': 'SML (4x4)', 'status':
+              {'no': 'TR01 AC 1667', 'type': 'SML (4x4)', 'status': 'AVAILABLE', 'km': 79200},
+              {'no': 'CG04 MA 3688', 'type': 'TATA BUS', 'status': 'ON_DUTY', 'km': 31400},
+              {'no': 'AS01 TC 0197', 'type': 'TATA STAR BUS', 'status': 'AVAILABLE', 'km': 16700},
+              {'no': 'AS01 KC 5200', 'type': 'TATA 407', 'status': 'AVAILABLE', 'km': 81200},
+              {'no': 'TR01 G 1156', 'type': 'TATA 407', 'status': 'AVAILABLE', 'km': 73400},
+              {'no': 'AS01 TC 0256', 'type': 'A/LEYLAND W/TRUCK', 'status': 'AVAILABLE', 'km': 18900},
+              {'no': 'AS01 TC 8182', 'type': 'SML AMBULANCE', 'status': 'AVAILABLE', 'km': 21400},
+              {'no': 'MH40 BG 4125', 'type': 'TATA TRUCK', 'status': 'OFF_ROAD', 'km': 92000},
+              {'no': 'JK02 DK 7573', 'type': 'A/Leyland BUS', 'status': 'AVAILABLE', 'km': 84500},
+              {'no': 'AS01 DD 1809', 'type': 'TATA BUS', 'status': 'OFF_ROAD', 'km': 156000},
+              {'no': 'AS01 EL 1349', 'type': 'JCB', 'status': 'AVAILABLE', 'km': 14200},
+              {'no': 'TR01 Q 0986', 'type': 'TRACTOR', 'status': 'AVAILABLE', 'km': 3400},
+              {'no': 'TR01 C 1324', 'type': 'SML MINI BUS', 'status': 'AVAILABLE', 'km': 82100},
+              {'no': 'AS01 DC 5000', 'type': 'TATA BUS', 'status': 'AVAILABLE', 'km': 149000},
+              {'no': 'AS01 UC 1704', 'type': 'MAHINDRA TRUCK', 'status': 'AVAILABLE', 'km': 19200},
+              {'no': 'AS01 UC 1724', 'type': 'A/LEYLAND TRUCK', 'status': 'AVAILABLE', 'km': 22100},
+              {'no': 'AS01 RC 8830', 'type': 'TATA WATER TRUCK', 'status': 'AVAILABLE', 'km': 114000},
+              {'no': 'TR01 AW 0427', 'type': 'TATA SUMO', 'status': 'AVAILABLE', 'km': 87600},
+              {'no': 'AS01 RC 9782', 'type': 'A/LEYLAND TRUCK', 'status': 'AVAILABLE', 'km': 31200},
+              {'no': 'AS01 TC 0178', 'type': 'TATA TRUCK', 'status': 'AVAILABLE', 'km': 17500},
+            ];
+
+            static List<Map<String, dynamic>> trips = [
+              {'vehicle': 'AS01 RC 9843', 'driver': 'CT/DVR VIKASH DUBEY', 'purpose': 'स्कूली ड्यूटी', 'status': 'ACTIVE', 'km': 28900},
+              {'vehicle': 'AS01 RC 5206', 'driver': 'HC/DVR DEBASHISH DEB', 'purpose': 'वाटर सप्लाई लाइन', 'status': 'ACTIVE', 'km': 95100},
+            ];
+
+            static List<Map<String, dynamic>> leaves = [
+              {'force': '135352802', 'name': 'CT/DVR UPENDRA DEBNATH', 'type': 'EL', 'days': 30, 'status': 'PENDING', 'reason': 'घरेलू कार्य'},
+              {'force': '981241197', 'name': 'HC/DVR RAJEEB SHARMA', 'type': 'CL', 'days': 5, 'status': 'APPROVED', 'reason': 'पारिवारिक कार्य'},
+            ];
+          }
+
+          // ---------------- LOGIN SCREEN ----------------
+          class LoginScreen extends StatefulWidget {
+            const LoginScreen({Key? key}) : super(key: key);
+
+            @override
+            State<LoginScreen> createState() => _LoginScreenState();
+          }
+
+          class _LoginScreenState extends State<LoginScreen> {
+            final _forceCtrl = TextEditingController();
+            final _passCtrl = TextEditingController();
+            bool _obscure = true;
+
+            void _login() {
+              final force = _forceCtrl.text.trim();
+              final pass = _passCtrl.text.trim();
+
+              final staff = MTData.staffList.firstWhere(
+                (s) => s['force'].toString().toUpperCase() == force.toUpperCase(),
+                orElse: () => {},
+              );
+
+              if (staff.isNotEmpty) {
+                final expectedPass = 'Mt@${staff['force']}';
+                if (pass == expectedPass) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => DashboardScreen(currentUser: staff)),
+                  );
+                  return;
+                }
+              }
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('गलत फोर्स नंबर या पासवर्ड! पासवर्ड "Mt@फोर्सनंबर" है।')),
+              );
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              return Scaffold(
+                backgroundColor: const Color(0xFFF0F4F8),
+                body: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF1B3B6F),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.security, size: 55, color: Colors.white),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'एम टी शाखा समूह केंद्र अगरतला',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1B3B6F)),
+                        ),
+                        const Text('वाहन, डिजिटल लॉग बुक एवं स्टाफ रिकॉर्ड', style: TextStyle(color: Colors.grey)),
+                        const SizedBox(height: 24),
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              children: [
+                                TextField(
+                                  controller: _forceCtrl,
+                                  decoration: const InputDecoration(
+                                    labelText: 'फोर्स नंबर (User ID)',
+                                    prefixIcon: Icon(Icons.badge),
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                TextField(
+                                  controller: _passCtrl,
+                                  obscureText: _obscure,
+                                  decoration: InputDecoration(
+                                    labelText: 'पासवर्ड (उदा. Mt@165060166)',
+                                    prefixIcon: const Icon(Icons.lock),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                                      onPressed: () => setState(() => _obscure = !_obscure),
+                                    ),
+                                    border: const OutlineInputBorder(),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 48,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1B3B6F),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: _login,
+                                    child: const Text('लॉग इन करें', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Card(
+                          color: Colors.indigo.shade50,
+                          child: const Padding(
+                            padding: EdgeInsets.all(10.0),
+                            child: Text(
+                              'मुख्य एडमिन आईडी:\nफोर्स नं: 165060166 (CT/DVR VIKASH DUBEY)\nपासवर्ड: Mt@165060166',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1B3B6F)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+          }
+
+          // ---------------- DASHBOARD SCREEN ----------------
+          class DashboardScreen extends StatefulWidget {
+            final Map<String, dynamic> currentUser;
+            const DashboardScreen({Key? key, required this.currentUser}) : super(key: key);
+
+            @override
+            State<DashboardScreen> createState() => _DashboardScreenState();
+          }
+
+          class _DashboardScreenState extends State<DashboardScreen> {
+            @override
+            Widget build(BuildContext context) {
+              final user = widget.currentUser;
+              final bool isAdmin = user['role'] == 'ADMIN';
+
+              final availVehicles = MTData.vehicles.where((v) => v['status'] == 'AVAILABLE').length;
+              final dutyVehicles = MTData.vehicles.where((v) => v['status'] == 'ON_DUTY').length;
+              final offVehicles = MTData.vehicles.where((v) => v['status'] == 'OFF_ROAD').length;
+
+              final presentStaff = MTData.staffList.where((s) => s['status'] == 'PRESENT' || s['status'] == 'ON_DUTY').length;
+              final leaveStaff = MTData.staffList.where((s) => s['status'] == 'LEAVE').length;
+
+              return Scaffold(
+                backgroundColor: const Color(0xFFF7F9FC),
+                appBar: AppBar(
+                  title: Text(isAdmin ? 'एम टी एडमिन पोर्टल (MTO Control)' : 'एम टी स्टाफ डैशबोर्ड'),
+                  backgroundColor: const Color(0xFF1B3B6F),
+                  foregroundColor: Colors.white,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.logout),
+                      onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
+                    ),
+                  ],
+                ),
+                body: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Card(
+                        elevation: 2,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: isAdmin ? Colors.deepOrange : const Color(0xFF1B3B6F),
+                            child: Icon(isAdmin ? Icons.admin_panel_settings : Icons.person, color: Colors.white),
+                          ),
+                          title: Text('${user['rank']} ${user['name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('फोर्स सं: ${user['force']} | रोल: ${isAdmin ? "सुपर एडमिन (CONTROL)" : "स्टाफ"}'),
+                          trailing: Chip(
+                            label: Text(user['status']),
+                            backgroundColor: Colors.green.shade100,
+                            labelStyle: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('एम टी परेड स्टेट (Parade State)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _statCard('उपलब्ध गाड़ियां', '$availVehicles', Colors.teal),
+                          _statCard('ड्यूटी पर', '$dutyVehicles', Colors.blue),
+                          _statCard('ऑफ-रोड (मरम्मत)', '$offVehicles', Colors.red),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _statCard('स्टाफ उपस्थित', '$presentStaff', Colors.green),
+                          _statCard('अवकाश पर (Leave)', '$leaveStaff', Colors.orange),
+                          _statCard('कुल वाहन', '${MTData.vehicles.length}', Colors.indigo),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Text(isAdmin ? 'प्रबंधन सुविधाएं (Admin Panel)' : 'सेवाएं एवं रिकॉर्ड्स', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.15,
+                        children: [
+                          _menuBtn(Icons.directions_car, 'गाड़ियां (${MTData.vehicles.length})', Colors.indigo, 'जोड़ें, हटाएं व बदलें', () => _openVehicles(isAdmin)),
+                          _menuBtn(Icons.people, 'स्टाफ (${MTData.staffList.length})', Colors.teal, 'जोड़ें, हटाएं व रोल कॉल', () => _openStaff(isAdmin)),
+                          _menuBtn(Icons.event_note, 'अवकाश प्रबंधन', Colors.deepOrange, isAdmin ? 'छुट्टी अप्रूव/रिजेक्ट करें' : 'छुट्टी अर्जी व स्टेटस', () => _openLeaves(isAdmin)),
+                          _menuBtn(Icons.history_edu, 'डिजिटल लॉग बुक', Colors.blue, 'गाड़ी आउट व इन एंट्री', () => _openLogBook(isAdmin)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            Widget _statCard(String t, String c, Color col) {
+              return Expanded(
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                    child: Column(
+                      children: [
+                        Text(c, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: col)),
+                        Text(t, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            Widget _menuBtn(IconData icon, String title, Color color, String subtitle, VoidCallback onTap) {
+              return InkWell(
+                onTap: onTap,
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, size: 28, color: color),
+                        const SizedBox(height: 6),
+                        Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        const SizedBox(height: 2),
+                        Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            // 1. VEHICLES: ADD, EDIT, DELETE
+            void _openVehicles(bool isAdmin) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setSheetState) => Container(
+                    height: MediaQuery.of(ctx).size.height * 0.88,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('वाहन रिकॉर्ड (${MTData.vehicles.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            if (isAdmin)
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
+                                icon: const Icon(Icons.add, size: 16),
+                                label: const Text('नई गाड़ी जोड़ें'),
+                                onPressed: () {
+                                  _addOrEditVehicleDialog(ctx, null, () {
+                                    setSheetState(() {});
+                                    setState(() {});
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                        const Divider(),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: MTData.vehicles.length,
+                            itemBuilder: (ctx, i) {
+                              final v = MTData.vehicles[i];
+                              Color col = Colors.green;
+                              if (v['status'] == 'ON_DUTY') col = Colors.blue;
+                              if (v['status'] == 'OFF_ROAD') col = Colors.red;
+
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: col.withOpacity(0.15),
+                                    child: Icon(Icons.directions_car, color: col),
+                                  ),
+                                  title: Text('${v['no']} (${v['type']})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text('मीटर रीडिंग: ${v['km']} KM | स्थिति: ${v['status']}'),
+                                  trailing: isAdmin
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                                              onPressed: () {
+                                                _addOrEditVehicleDialog(ctx, v, () {
+                                                  setSheetState(() {});
+                                                  setState(() {});
+                                                });
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                              onPressed: () {
+                                                _confirmDelete(ctx, 'गाड़ी ${v['no']}', () {
+                                                  setSheetState(() {
+                                                    MTData.vehicles.removeAt(i);
+                                                  });
+                                                  setState(() {});
+                                                });
+                                              },
+                                            ),
+                                          ],
+                                        )
+                                      : Chip(label: Text(v['status'], style: const TextStyle(fontSize: 10))),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            void _addOrEditVehicleDialog(BuildContext ctx, Map<String, dynamic>? vehicle, VoidCallback onSuccess) {
+              final isEdit = vehicle != null;
+              final noCtrl = TextEditingController(text: isEdit ? vehicle['no'] : '');
+              final typeCtrl = TextEditingController(text: isEdit ? vehicle['type'] : '');
+              final kmCtrl = TextEditingController(text: isEdit ? '${vehicle['km']}' : '');
+              String status = isEdit ? vehicle['status'] : 'AVAILABLE';
+
+              showDialog(
+                context: ctx,
+                builder: (dCtx) => StatefulBuilder(
+                  builder: (dCtx, setDlgState) => AlertDialog(
+                    title: Text(isEdit ? 'गाड़ी का विवरण बदलें' : 'नई गाड़ी जोड़ें'),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(controller: noCtrl, decoration: const InputDecoration(labelText: 'गाड़ी नंबर (उदा. TR01-G-1154)')),
+                          TextField(controller: typeCtrl, decoration: const InputDecoration(labelText: 'प्रकार (उदा. Tata 407, Gypsy, Bus)')),
+                          TextField(controller: kmCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'मीटर रीडिंग (KM)')),
+                          const SizedBox(height: 10),
+                          DropdownButtonFormField<String>(
+                            value: status,
+                            decoration: const InputDecoration(labelText: 'स्थिति (Status)'),
+                            items: ['AVAILABLE', 'ON_DUTY', 'OFF_ROAD'].map((st) => DropdownMenuItem(value: st, child: Text(st))).toList(),
+                            onChanged: (val) => setDlgState(() => status = val!),
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('रद्द करें')),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (noCtrl.text.isNotEmpty) {
+                            if (isEdit) {
+                              vehicle['no'] = noCtrl.text.trim().toUpperCase();
+                              vehicle['type'] = typeCtrl.text.trim().toUpperCase();
+                              vehicle['km'] = int.tryParse(kmCtrl.text) ?? 0;
+                              vehicle['status'] = status;
+                            } else {
+                              MTData.vehicles.insert(0, {
+                                'no': noCtrl.text.trim().toUpperCase(),
+                                'type': typeCtrl.text.trim().toUpperCase(),
+                                'km': int.tryParse(kmCtrl.text) ?? 0,
+                                'status': status,
+                              });
+                            }
+                            Navigator.pop(dCtx);
+                            onSuccess();
+                          }
+                        },
+                        child: Text(isEdit ? 'अपडेट करें' : 'सुरक्षित करें'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // 2. STAFF: ADD, EDIT, DELETE & STATUS CHANGE
+            void _openStaff(bool isAdmin) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setSheetState) => Container(
+                    height: MediaQuery.of(ctx).size.height * 0.88,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('एम टी स्टाफ सूची (${MTData.staffList.length})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            if (isAdmin)
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
+                                icon: const Icon(Icons.person_add, size: 16),
+                                label: const Text('नया स्टाफ जोड़ें'),
+                                onPressed: () {
+                                  _addOrEditStaffDialog(ctx, null, () {
+                                    setSheetState(() {});
+                                    setState(() {});
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                        const Divider(),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: MTData.staffList.length,
+                            itemBuilder: (ctx, i) {
+                              final s = MTData.staffList[i];
+                              Color statusCol = Colors.green;
+                              if (s['status'] == 'LEAVE') statusCol = Colors.orange;
+                              if (s['status'] == 'SICK') statusCol = Colors.red;
+
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: s['role'] == 'ADMIN' ? Colors.deepOrange : Colors.indigo,
+                                    child: Text(s['name'][0], style: const TextStyle(color: Colors.white)),
+                                  ),
+                                  title: Text('${s['rank']} ${s['name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text('फोर्स सं: ${s['force']} | मो: ${s['mobile']}\nस्थिति: ${s['status']}'),
+                                  trailing: isAdmin && s['force'] != '165060166'
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                                              onPressed: () {
+                                                _addOrEditStaffDialog(ctx, s, () {
+                                                  setSheetState(() {});
+                                                  setState(() {});
+                                                });
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                              onPressed: () {
+                                                _confirmDelete(ctx, '${s['rank']} ${s['name']}', () {
+                                                  setSheetState(() {
+                                                    MTData.staffList.removeAt(i);
+                                                  });
+                                                  setState(() {});
+                                                });
+                                              },
+                                            ),
+                                          ],
+                                        )
+                                      : Chip(label: Text(s['status'], style: const TextStyle(fontSize: 10))),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            void _addOrEditStaffDialog(BuildContext ctx, Map<String, dynamic>? staff, VoidCallback onSuccess) {
+              final isEdit = staff != null;
+              final forceCtrl = TextEditingController(text: isEdit ? staff['force'] : '');
+              final nameCtrl = TextEditingController(text: isEdit ? staff['name'] : '');
+              final rankCtrl = TextEditingController(text: isEdit ? staff['rank'] : 'CT/DVR');
+              final mobCtrl = TextEditingController(text: isEdit ? staff['mobile'] : '');
+              String status = isEdit ? staff['status'] : 'PRESENT';
+
+              showDialog(
+                context: ctx,
+                builder: (dCtx) => StatefulBuilder(
+                  builder: (dCtx, setDlgState) => AlertDialog(
+                    title: Text(isEdit ? 'स्टाफ का विवरण बदलें' : 'नया स्टाफ जोड़ें'),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(controller: forceCtrl, enabled: !isEdit, decoration: const InputDecoration(labelText: 'फोर्स नंबर (User ID)')),
+                          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'पूरा नाम')),
+                          TextField(controller: rankCtrl, decoration: const InputDecoration(labelText: 'पद / रैंक (उदा. HC/DVR, CT/DVR)')),
+                          TextField(controller: mobCtrl, decoration: const InputDecoration(labelText: 'मोबाइल नंबर')),
+                          const SizedBox(height: 10),
+                          DropdownButtonFormField<String>(
+                            value: status,
+                            decoration: const InputDecoration(labelText: 'दैनिक उपस्थिति स्थिति'),
+                            items: ['PRESENT', 'ON_DUTY', 'LEAVE', 'SICK', 'REST'].map((st) => DropdownMenuItem(value: st, child: Text(st))).toList(),
+                            onChanged: (val) => setDlgState(() => status = val!),
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('रद्द करें')),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (forceCtrl.text.isNotEmpty && nameCtrl.text.isNotEmpty) {
+                            if (isEdit) {
+                              staff['name'] = nameCtrl.text.trim().toUpperCase();
+                              staff['rank'] = rankCtrl.text.trim().toUpperCase();
+                              staff['mobile'] = mobCtrl.text.trim();
+                              staff['status'] = status;
+                            } else {
+                              MTData.staffList.add({
+                                'force': forceCtrl.text.trim(),
+                                'name': nameCtrl.text.trim().toUpperCase(),
+                                'rank': rankCtrl.text.trim().toUpperCase(),
+                                'mobile': mobCtrl.text.trim(),
+                                'role': 'STAFF',
+                                'status': status,
+                              });
+                            }
+                            Navigator.pop(dCtx);
+                            onSuccess();
+                          }
+                        },
+                        child: Text(isEdit ? 'अपडेट करें' : 'जोड़ें'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // 3. LEAVE APPROVAL / REJECTION
+            void _openLeaves(bool isAdmin) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setSheetState) => Container(
+                    height: MediaQuery.of(ctx).size.height * 0.88,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('अवकाश रिकॉर्ड (Leaves)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('छुट्टी अर्जी दें'),
+                              onPressed: () => _applyLeaveDialog(ctx, () {
+                                setSheetState(() {});
+                                setState(() {});
+                              }),
+                            ),
+                          ],
+                        ),
+                        const Divider(),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: MTData.leaves.length,
+                            itemBuilder: (ctx, i) {
+                              final l = MTData.leaves[i];
+                              Color bg = Colors.orange;
+                              if (l['status'] == 'APPROVED') bg = Colors.green;
+                              if (l['status'] == 'REJECTED') bg = Colors.red;
+
+                              return Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(l['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                          Chip(label: Text(l['status']), backgroundColor: bg.withOpacity(0.15)),
+                                        ],
+                                      ),
+                                      Text('प्रकार: ${l['type']} | अवधि: ${l['days']} दिन | कारण: ${l['reason']}'),
+                                      if (isAdmin && l['status'] == 'PENDING')
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 8.0),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.end,
+                                            children: [
+                                              OutlinedButton(
+                                                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                                                onPressed: () {
+                                                  setSheetState(() => l['status'] = 'REJECTED');
+                                                  setState(() {});
+                                                },
+                                                child: const Text('अस्वीकार (Reject)'),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                                                onPressed: () {
+                                                  setSheetState(() {
+                                                    l['status'] = 'APPROVED';
+                                                    final staff = MTData.staffList.firstWhere((s) => s['force'] == l['force'], orElse: () => {});
+                                                    if (staff.isNotEmpty) staff['status'] = 'LEAVE';
+                                                  });
+                                                  setState(() {});
+                                                },
+                                                child: const Text('मंजूर करें (Approve)'),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            void _applyLeaveDialog(BuildContext ctx, VoidCallback onAdded) {
+              String type = 'CL';
+              final daysCtrl = TextEditingController(text: '2');
+              final rsnCtrl = TextEditingController();
+
+              showDialog(
+                context: ctx,
+                builder: (dCtx) => StatefulBuilder(
+                  builder: (dCtx, setDlg) => AlertDialog(
+                    title: const Text('छुट्टी के लिए आवेदन'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          value: type,
+                          decoration: const InputDecoration(labelText: 'प्रकार'),
+                          items: ['CL', 'EL', 'MEDICAL', 'REST'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                          onChanged: (val) => setDlg(() => type = val!),
+                        ),
+                        TextField(controller: daysCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'दिन')),
+                        TextField(controller: rsnCtrl, decoration: const InputDecoration(labelText: 'कारण')),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('रद्द करें')),
+                      ElevatedButton(
+                        onPressed: () {
+                          MTData.leaves.insert(0, {
+                            'force': widget.currentUser['force'],
+                            'name': '${widget.currentUser['rank']} ${widget.currentUser['name']}',
+                            'type': type,
+                            'days': int.tryParse(daysCtrl.text) ?? 1,
+                            'reason': rsnCtrl.text.trim(),
+                            'status': 'PENDING'
+                          });
+                          Navigator.pop(dCtx);
+                          onAdded();
+                        },
+                        child: const Text('आवेदन भेजें'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // 4. DIGITAL LOGBOOK
+            void _openLogBook(bool isAdmin) {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setSheetState) => Container(
+                    height: MediaQuery.of(ctx).size.height * 0.88,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('डिजिटल लॉग बुक (कार पास)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
+                              icon: const Icon(Icons.add, size: 16),
+                              label: const Text('गाड़ी आउट करें'),
+                              onPressed: () => _addTripDialog(ctx, () {
+                                setSheetState(() {});
+                                setState(() {});
+                              }),
+                            ),
+                          ],
+                        ),
+                        const Divider(),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: MTData.trips.length,
+                            itemBuilder: (ctx, i) {
+                              final t = MTData.trips[i];
+                              final bool isActive = t['status'] == 'ACTIVE';
+
+                              return Card(
+                                child: ListTile(
+                                  title: Text('${t['vehicle']} - ${t['purpose']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text('चालक: ${t['driver']} | ओपनिंग KM: ${t['km']}'),
+                                  trailing: isActive
+                                      ? ElevatedButton(
+                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                                          onPressed: () {
+                                            setSheetState(() {
+                                              t['status'] = 'COMPLETED';
+                                            });
+                                            setState(() {});
+                                          },
+                                          child: const Text('वापसी (In)'),
+                                        )
+                                      : const Chip(label: Text('वापस (In)')),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            void _addTripDialog(BuildContext ctx, VoidCallback onAdded) {
+              String selectedVeh = MTData.vehicles[0]['no'];
+              String selectedDvr = MTData.staffList[0]['name'];
+              final purCtrl = TextEditingController();
+
+              showDialog(
+                context: ctx,
+                builder: (dCtx) => StatefulBuilder(
+                  builder: (dCtx, setDlg) => AlertDialog(
+                    title: const Text('गाड़ी रवानगी (Trip Out)'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          value: selectedVeh,
+                          decoration: const InputDecoration(labelText: 'गाड़ी चुनें'),
+                          items: MTData.vehicles.map<DropdownMenuItem<String>>((v) {
+                            return DropdownMenuItem(value: v['no'] as String, child: Text(v['no'] as String, style: const TextStyle(fontSize: 12)));
+                          }).toList(),
+                          onChanged: (val) => setDlg(() => selectedVeh = val!),
+                        ),
+                        DropdownButtonFormField<String>(
+                          value: selectedDvr,
+                          decoration: const InputDecoration(labelText: 'ड्राइवर चुनें'),
+                          items: MTData.staffList.map<DropdownMenuItem<String>>((s) {
+                            return DropdownMenuItem(value: s['name'] as String, child: Text('${s['rank']} ${s['name']}', style: const TextStyle(fontSize: 12)));
+                          }).toList(),
+                          onChanged: (val) => setDlg(() => selectedDvr = val!),
+                        ),
+                        TextField(controller: purCtrl, decoration: const InputDecoration(labelText: 'ड्यूटी का उद्देश्य')),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(dCtx), child: const Text('रद्द करें')),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (purCtrl.text.isNotEmpty) {
+                            MTData.trips.insert(0, {
+                              'vehicle': selectedVeh,
+                              'driver': selectedDvr,
+                              'purpose': purCtrl.text.trim(),
+                              'status': 'ACTIVE',
+                              'km': 0
+                            });
+                            Navigator.pop(dCtx);
+                            onAdded();
+                          }
+                        },
+                        child: const Text('आउट दर्ज करें'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            void _confirmDelete(BuildContext ctx, String itemName, VoidCallback onDelete) {
+              showDialog(
+                context: ctx,
+                builder: (c) => AlertDialog(
+                  title: const Text('हटाने की पुष्टि करें'),
+                  content: Text('क्या आप वाकई $itemName को सूची से हटाना चाहते हैं?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(c), child: const Text('नहीं')),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                      onPressed: () {
+                        onDelete();
+                        Navigator.pop(c);
+                      },
+                      child: const Text('हाँ, हटाएं'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          }
+          EOF
+
+      - name: Build Release APK
+        run: |
+          cd mt_app
+          flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MT_GC_Agartala_Admin_VikashDubey_APK
+          path: mt_app/build/app/outputs/flutter-apk/app-release.apk
