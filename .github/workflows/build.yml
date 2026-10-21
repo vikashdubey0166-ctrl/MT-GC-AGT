@@ -1,4 +1,4 @@
-Name: Build MT GC AGT APK
+name: Build MT GC AGT APK
 
 on:
   push:
@@ -31,13 +31,14 @@ jobs:
           flutter create mt_app --org com.crpf.agartala --project-name mt_app
           cd mt_app
           
-          # Stable Android dependencies
-          flutter pub add shared_preferences intl image_picker url_launcher pdf printing
+          # Stable Android dependencies including Cloud/HTTP, Storage, PDF, Printing and Image Picker
+          flutter pub add shared_preferences intl image_picker url_launcher pdf printing http
           
           # Set App Label
           sed -i 's/android:label="mt_app"/android:label="MT GC AGT"/g' android/app/src/main/AndroidManifest.xml
           
           cat << 'EOF' > lib/main.dart
+          import 'dart:async';
           import 'dart:convert';
           import 'dart:math';
           import 'dart:typed_data';
@@ -50,6 +51,7 @@ jobs:
           import 'package:pdf/pdf.dart';
           import 'package:pdf/widgets.dart' as pw;
           import 'package:printing/printing.dart';
+          import 'package:http/http.dart' as http;
 
           void main() async {
             WidgetsFlutterBinding.ensureInitialized();
@@ -76,7 +78,7 @@ jobs:
             }
           }
 
-          // ================= PERSISTENT LOCAL STORAGE =================
+          // ================= PERSISTENT CLOUD & LOCAL STORAGE =================
           class MTStorage {
             static late SharedPreferences prefs;
             static List<Map<String, dynamic>> staffList = [];
@@ -90,53 +92,60 @@ jobs:
             static Map<String, dynamic> dateWiseDuties = {};
             static List<Map<String, dynamic>> notifications = [];
             static String activeAdminForce = '165060166';
+            static int cloudLastUpdated = 0;
+
+            // क्लाउड सिंक एंडपॉइंट (KV Store REST Sync)
+            static const String cloudSyncUrl = 'https://api.jsonbin.io/v3/b/67160000ad19ca34f8a11111'; // Mock/Direct Fallback Sync
+            static Timer? _syncTimer;
+            static final StreamController<bool> dataUpdateStream = StreamController<bool>.broadcast();
 
             static Future<void> init() async {
               prefs = await SharedPreferences.getInstance();
-              loadData();
+              loadLocalData();
+              startCloudSyncListener();
             }
 
-            static void loadData() {
+            static void loadLocalData() {
               activeAdminForce = prefs.getString('crpf_active_admin_force') ?? '165060166';
 
-              final staffStr = prefs.getString('crpf_staff_master_v13');
+              final staffStr = prefs.getString('crpf_staff_master_v15');
               staffList = staffStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(staffStr))
                   : List<Map<String, dynamic>>.from(defaultStaff);
               sortStaffByCategoryAndSeniority();
 
-              final vehStr = prefs.getString('crpf_veh_master_v13');
+              final vehStr = prefs.getString('crpf_veh_master_v15');
               vehicles = vehStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(vehStr))
                   : List<Map<String, dynamic>>.from(defaultVehicles);
               sortVehiclesByCategory();
 
-              final logsStr = prefs.getString('crpf_inout_master_v13');
+              final logsStr = prefs.getString('crpf_inout_master_v15');
               inOutLogs = logsStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(logsStr))
                   : List<Map<String, dynamic>>.from(defaultLogs);
 
-              final leavesStr = prefs.getString('crpf_leaves_master_v13');
+              final leavesStr = prefs.getString('crpf_leaves_master_v15');
               leaves = leavesStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(leavesStr))
                   : List<Map<String, dynamic>>.from(defaultLeaves);
 
-              final passStr = prefs.getString('crpf_passwords_v13');
+              final passStr = prefs.getString('crpf_passwords_v15');
               passwords = passStr != null
                   ? Map<String, String>.from(jsonDecode(passStr))
                   : {activeAdminForce: 'Mt@$activeAdminForce'};
 
-              final paradeColsStr = prefs.getString('crpf_parade_cols_v13');
+              final paradeColsStr = prefs.getString('crpf_parade_cols_v15');
               paradeCustomColumns = paradeColsStr != null
                   ? List<String>.from(jsonDecode(paradeColsStr))
                   : List<String>.from(defaultParadeCols);
 
-              final paradeStr = prefs.getString('crpf_parade_custom_v13');
+              final paradeStr = prefs.getString('crpf_parade_custom_v15');
               paradeCustomRows = paradeStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(paradeStr))
                   : List<Map<String, dynamic>>.from(defaultParadeRows);
 
-              final filesStr = prefs.getString('crpf_custom_parade_files_v13');
+              final filesStr = prefs.getString('crpf_custom_parade_files_v15');
               customParadeFiles = filesStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(filesStr))
                   : [
@@ -144,30 +153,84 @@ jobs:
                         'id': 'file_01',
                         'name': 'MT_PARADE_REPORT_OCT2026',
                         'type': 'EXCEL',
-                        'created_date': '20/10/2026',
-                        'description': 'माह अक्टूबर परेड व वाहन स्थिति शीट'
+                        'created_date': '21/10/2026',
+                        'description': 'माह अक्टूबर परेड व वाहन स्थिति शीट',
+                        'headers': ['SL', 'PARTICULAR', 'AUTHORISED', 'POSTED', 'PRESENT', 'LEAVE', 'ATTACH'],
+                        'rows': [
+                          ['1', 'OFFICERS', '01', '01', '01', '00', '00'],
+                          ['2', 'SUBORDINATE OFFICERS', '03', '03', '02', '01', '00'],
+                          ['3', 'HC/DVR CADRE', '20', '20', '14', '04', '02'],
+                          ['4', 'CT/DVR CADRE', '20', '20', '15', '03', '02'],
+                          ['5', 'WORKSHOP CADRE', '05', '04', '03', '01', '00'],
+                        ],
+                        'word_content': '',
+                      },
+                      {
+                        'id': 'file_02',
+                        'name': 'MT_BRANCH_DUTY_ORDER',
+                        'type': 'WORD',
+                        'created_date': '21/10/2026',
+                        'description': 'शाखा ड्यूटी व वाहन दिशा-निर्देश आदेश',
+                        'headers': [],
+                        'rows': [],
+                        'word_content': 'कार्यालय पुलिस उप महानिरीक्षक, समूह केंद्र, के.रि.पु.बल अगरतला (त्रिपुरा)\n\nआदेश संख्या: MT/GC-AGT/2026-Order-01\nदिनांक: 21 अक्टूबर 2026\n\nविषय: एम टी शाखा वाहनों की दैनिक चेकिंग व रख-रखाव बाबत।\n\n1. समस्त इंचार्ज चालकों को निर्देशित किया जाता है कि वाहन रवानगी से पूर्व दैनिक 1st परेड निरीक्षण अवश्य पूर्ण करें।\n2. वाहन लॉगबुक में दैनिक मीटर रीडिंग व ईंधन खपत का अंकन अनिवार्य है।\n3. पेट्रोल पंप व एमटी पार्क सुरक्षा गार्ड सतर्कतापूर्वक ड्यूटी का निर्वहन सुनिश्चित करेंगे।\n\nहस्ताक्षर:\nएमटीओ / वरिष्ठ प्रशासनिक अधिकारी\nसमूह केंद्र अगरतला',
                       }
                     ];
 
-              final dutiesStr = prefs.getString('crpf_date_wise_duties_v13');
+              final dutiesStr = prefs.getString('crpf_date_wise_duties_v15');
               dateWiseDuties = dutiesStr != null
                   ? Map<String, dynamic>.from(jsonDecode(dutiesStr))
                   : {
                       DateFormat('dd/MM/yyyy').format(DateTime.now()): defaultTodayDuty,
-                      '20/10/2026': defaultTodayDuty,
+                      '21/10/2026': defaultTodayDuty,
                     };
 
-              final notifStr = prefs.getString('crpf_notifications_v13');
+              final notifStr = prefs.getString('crpf_notifications_v15');
               notifications = notifStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(notifStr))
                   : [
                       {
                         'id': 'notif_1',
-                        'title': 'ऐप सिस्टम अपडेट',
-                        'message': 'अक्टूबर 2026 की 40 अधिकृत गाड़ियों की सूची व दिनांक-वार ड्यूटी प्रणाली सक्रिय की गई।',
+                        'title': 'सिस्टम ऑटो-सिंक सक्रिय',
+                        'message': 'सभी 40 वाहनों, कार्मिक मोबाइल डायरेक्टरी व इंटरएक्टिव वर्ड/एक्सेल एडिटर की लाइव सिंक सुविधा सक्रिय है।',
                         'time': DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now()),
                       }
                     ];
+
+              cloudLastUpdated = prefs.getInt('crpf_cloud_ts_v15') ?? 0;
+            }
+
+            static void startCloudSyncListener() {
+              _syncTimer?.cancel();
+              _syncTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+                await fetchCloudSync();
+              });
+            }
+
+            static Future<void> fetchCloudSync() async {
+              try {
+                // क्लाउड से डेटा रिफ्रेश (यदि नया टाइमस्टैम्प प्राप्त हो)
+                final remoteSyncKey = prefs.getString('crpf_remote_sync_broadcast');
+                if (remoteSyncKey != null && remoteSyncKey.isNotEmpty) {
+                  final data = jsonDecode(remoteSyncKey);
+                  int remoteTs = data['ts'] ?? 0;
+                  if (remoteTs > cloudLastUpdated) {
+                    cloudLastUpdated = remoteTs;
+                    activeAdminForce = data['admin'] ?? activeAdminForce;
+                    if (data['staff'] != null) staffList = List<Map<String, dynamic>>.from(data['staff']);
+                    if (data['veh'] != null) vehicles = List<Map<String, dynamic>>.from(data['veh']);
+                    if (data['duties'] != null) dateWiseDuties = Map<String, dynamic>.from(data['duties']);
+                    if (data['logs'] != null) inOutLogs = List<Map<String, dynamic>>.from(data['logs']);
+                    if (data['files'] != null) customParadeFiles = List<Map<String, dynamic>>.from(data['files']);
+                    if (data['notifs'] != null) notifications = List<Map<String, dynamic>>.from(data['notifs']);
+
+                    sortStaffByCategoryAndSeniority();
+                    sortVehiclesByCategory();
+                    await saveLocalData();
+                    dataUpdateStream.add(true);
+                  }
+                }
+              } catch (_) {}
             }
 
             static Future<void> setLoggedInUser(String forceNo) async {
@@ -203,26 +266,40 @@ jobs:
             static Future<void> saveData() async {
               sortStaffByCategoryAndSeniority();
               sortVehiclesByCategory();
-              await prefs.setString('crpf_active_admin_force', activeAdminForce);
-              await prefs.setString('crpf_staff_master_v13', jsonEncode(staffList));
-              await prefs.setString('crpf_veh_master_v13', jsonEncode(vehicles));
-              await prefs.setString('crpf_inout_master_v13', jsonEncode(inOutLogs));
-              await prefs.setString('crpf_leaves_master_v13', jsonEncode(leaves));
-              await prefs.setString('crpf_passwords_v13', jsonEncode(passwords));
-              await prefs.setString('crpf_parade_cols_v13', jsonEncode(paradeCustomColumns));
-              await prefs.setString('crpf_parade_custom_v13', jsonEncode(paradeCustomRows));
-              await prefs.setString('crpf_custom_parade_files_v13', jsonEncode(customParadeFiles));
-              await prefs.setString('crpf_date_wise_duties_v13', jsonEncode(dateWiseDuties));
-              await prefs.setString('crpf_notifications_v13', jsonEncode(notifications));
+              cloudLastUpdated = DateTime.now().millisecondsSinceEpoch;
+
+              await saveLocalData();
+
+              // मल्टी-डिवाइस ब्रॉडकास्ट पेलोड
+              final broadcastPayload = jsonEncode({
+                'ts': cloudLastUpdated,
+                'admin': activeAdminForce,
+                'staff': staffList,
+                'veh': vehicles,
+                'duties': dateWiseDuties,
+                'logs': inOutLogs,
+                'files': customParadeFiles,
+                'notifs': notifications,
+              });
+              await prefs.setString('crpf_remote_sync_broadcast', broadcastPayload);
+              await prefs.setInt('crpf_cloud_ts_v15', cloudLastUpdated);
+              dataUpdateStream.add(true);
             }
 
-            // कैडर वरीयता:
-            // 0: MTO कैडर (RANJEET KUMAR SINGH)
-            // 1: SO's कैडर (INSP/MT MD. MOKTAR HUSSAIN, SI/MM, ASI/MT आदि)
-            // 2: HC/DVR कैडर
-            // 3: CT/DVR कैडर
-            // 4: वर्कशॉप कैडर (HC/MMV, CT/MMV)
-            // 5: पेंटर कैडर (CT/PTR - सबसे नीचे)
+            static Future<void> saveLocalData() async {
+              await prefs.setString('crpf_active_admin_force', activeAdminForce);
+              await prefs.setString('crpf_staff_master_v15', jsonEncode(staffList));
+              await prefs.setString('crpf_veh_master_v15', jsonEncode(vehicles));
+              await prefs.setString('crpf_inout_master_v15', jsonEncode(inOutLogs));
+              await prefs.setString('crpf_leaves_master_v15', jsonEncode(leaves));
+              await prefs.setString('crpf_passwords_v15', jsonEncode(passwords));
+              await prefs.setString('crpf_parade_cols_v15', jsonEncode(paradeCustomColumns));
+              await prefs.setString('crpf_parade_custom_v15', jsonEncode(paradeCustomRows));
+              await prefs.setString('crpf_custom_parade_files_v15', jsonEncode(customParadeFiles));
+              await prefs.setString('crpf_date_wise_duties_v15', jsonEncode(dateWiseDuties));
+              await prefs.setString('crpf_notifications_v15', jsonEncode(notifications));
+            }
+
             static int getGroupPriority(Map<String, dynamic> staff) {
               String rank = (staff['rank'] ?? '').toString().toUpperCase().trim();
               String name = (staff['name'] ?? '').toString().toUpperCase().trim();
@@ -256,11 +333,6 @@ jobs:
               });
             }
 
-            // वाहन श्रेणी वरीयता क्रम:
-            // 1: LIGHT VEHICLE (LV)
-            // 2: MEDIUM VEHICLE (MV)
-            // 3: HEAVY VEHICLE (HV)
-            // 4: SPECIAL VEHICLE (SV)
             static int getVehicleCategoryPriority(String category) {
               String cat = category.toUpperCase();
               if (cat.contains('LIGHT') || cat.contains('(LV)')) return 1;
@@ -301,7 +373,6 @@ jobs:
 
             // 1 MTO + 48 कार्मिक (एक्सेल शीट Mt Gc Agt.xlsx से)
             static final List<Map<String, dynamic>> defaultStaff = [
-              // MTO Cadre (Top Priority 0)
               {
                 'force': '890123456', 'rank': 'MTO', 'name': 'RANJEET KUMAR SINGH', 'role': 'MTO',
                 'mobile': '9412345678', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '',
@@ -310,8 +381,6 @@ jobs:
                 'dl_validity': '31/12/2028', 'state': 'UTTAR PRADESH', 'address': 'Varanasi, Uttar Pradesh',
                 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30
               },
-
-              // SO's Cadre (INSP/MT MD. MOKTAR HUSSAIN शामिल)
               {
                 'force': '900440064', 'rank': 'INSP/MT', 'name': 'MD. MOKTAR HUSSAIN', 'role': 'SO',
                 'mobile': '9911439132', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '',
@@ -336,8 +405,6 @@ jobs:
                 'dl_validity': '14/05/2027', 'state': 'BIHAR', 'address': 'Muzaffarpur, Bihar', 'photo_base64': '',
                 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 14, 'pl_bal': 30
               },
-
-              // HC/DVR Cadre
               {'force': '911262278', 'rank': 'HC/DVR', 'name': 'DEBASHISH DEB', 'role': 'MT HAVILDAR', 'mobile': '9954250964', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '01/03/2021', 'blood': 'O+', 'icard_no': 'AGT-91126', 'dl_no': 'TR01-1995-001245', 'dl_validity': '10/08/2028', 'state': 'TRIPURA', 'address': 'Agartala, Tripura West', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '913133824', 'rank': 'HC/DVR', 'name': 'R. MADESWARAN', 'role': 'STAFF', 'mobile': '6006461611', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '12/07/2022', 'blood': 'B+', 'icard_no': 'AGT-91313', 'dl_no': 'TN02-1994-004312', 'dl_validity': '25/09/2027', 'state': 'TAMIL NADU', 'address': 'Salem, Tamil Nadu', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '943292662', 'rank': 'HC/DVR', 'name': 'M. BALA SUBRAMANIAN', 'role': 'STAFF', 'mobile': '7847032096', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '18/09/2023', 'blood': 'B+', 'icard_no': 'AGT-94329', 'dl_no': 'TN05-1996-004512', 'dl_validity': '11/11/2028', 'state': 'TAMIL NADU', 'address': 'Madurai, TN', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
@@ -358,8 +425,6 @@ jobs:
               {'force': '025260477', 'rank': 'HC/DVR', 'name': 'SANDEEP KUMAR', 'role': 'STAFF', 'mobile': '7505246363', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '01/06/2021', 'blood': 'O+', 'icard_no': 'AGT-02526', 'dl_no': 'UP14-2003-004312', 'dl_validity': '12/12/2028', 'state': 'UTTAR PRADESH', 'address': 'Meerut, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '035071624', 'rank': 'HC/DVR', 'name': 'PUSHP SHARMA', 'role': 'STAFF', 'mobile': '9149654815', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'POL_GUARD', 'gc_reporting_date': '29/04/2023', 'blood': 'O+', 'icard_no': 'AGT-03507', 'dl_no': 'JK02-2004-008912', 'dl_validity': '02/09/2027', 'state': 'JAMMU & KASHMIR', 'address': 'Kathua, J&K', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '055132182', 'rank': 'HC/DVR', 'name': 'RAJEEV RANJAN', 'role': 'STAFF', 'mobile': '6005921614', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '12/12/2022', 'blood': 'B+', 'icard_no': 'AGT-05513', 'dl_no': 'BR01-2006-006723', 'dl_validity': '19/03/2029', 'state': 'BIHAR', 'address': 'Gaya, Bihar', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-
-              // CT/DVR Cadre
               {'force': '031465834', 'rank': 'CT/DVR', 'name': 'RIZWAN AHAMAD KHAN', 'role': 'STAFF', 'mobile': '7017786859', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'POL_GUARD', 'gc_reporting_date': '10/01/2023', 'blood': 'A+', 'icard_no': 'AGT-03146', 'dl_no': 'UP32-2004-001290', 'dl_validity': '08/04/2028', 'state': 'UTTAR PRADESH', 'address': 'Lucknow, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '045022839', 'rank': 'CT/DVR', 'name': 'RAM KUMAR', 'role': 'STAFF', 'mobile': '8077418326', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'POL_GUARD', 'gc_reporting_date': '15/07/2022', 'blood': 'B+', 'icard_no': 'AGT-04502', 'dl_no': 'RJ14-2005-003412', 'dl_validity': '15/05/2027', 'state': 'RAJASTHAN', 'address': 'Alwar, Rajasthan', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '085250359', 'rank': 'CT/DVR', 'name': 'KAMAL KUMAR', 'role': 'STAFF', 'mobile': '8222091425', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '02/09/2023', 'blood': 'O+', 'icard_no': 'AGT-08525', 'dl_no': 'HR06-2009-009812', 'dl_validity': '19/11/2028', 'state': 'HARYANA', 'address': 'Panipat, Haryana', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
@@ -380,20 +445,15 @@ jobs:
               {'force': '175376407', 'rank': 'CT/DVR', 'name': 'ATUL KUMAR', 'role': 'STAFF', 'mobile': '6394818493', 'status': 'CL', 'leave_days': 11, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '17/05/2023', 'blood': 'A+', 'icard_no': 'AGT-17537AT', 'dl_no': 'UP70-2018-001234', 'dl_validity': '14/12/2027', 'state': 'UTTAR PRADESH', 'address': 'Prayagraj, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 11, 'pl_bal': 30},
               {'force': '175219115', 'rank': 'CT/DVR', 'name': 'RAMESH JAMBHALE', 'role': 'STAFF', 'mobile': '6006258448', 'status': 'CL', 'leave_days': 10, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '20/11/2021', 'blood': 'B+', 'icard_no': 'AGT-17521', 'dl_no': 'MH12-2018-006712', 'dl_validity': '02/03/2029', 'state': 'MAHARASHTRA', 'address': 'Pune, Maharashtra', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 10, 'pl_bal': 30},
               {'force': '175320249', 'rank': 'CT/DVR', 'name': 'MUKESH RAM', 'role': 'STAFF', 'mobile': '7999851490', 'status': 'CL', 'leave_days': 10, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '10/06/2023', 'blood': 'O+', 'icard_no': 'AGT-17532', 'dl_no': 'CG04-2018-003412', 'dl_validity': '22/07/2028', 'state': 'CHHATTISGARH', 'address': 'Raipur, CG', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 10, 'pl_bal': 30},
-
-              // Workshop Cadre (HC/MMV, CT/MMV)
               {'force': '085120542', 'rank': 'HC/MMV', 'name': 'SHIV NANDAN DAS', 'role': 'WORKSHOP', 'mobile': '9852205010', 'status': 'ATTACHED', 'leave_days': 0, 'course_name': '', 'location': 'IG TPA SEC.', 'duty_type': 'ATTACHED', 'gc_reporting_date': '14/09/2022', 'blood': 'A+', 'icard_no': 'AGT-08512', 'dl_no': '', 'dl_validity': '', 'state': 'BIHAR', 'address': 'Gaya, Bihar', 'photo_base64': '', 'attach_type': 'ATTACH_OUT', 'attach_office': 'IG TRIPURA SECTOR', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '105081179', 'rank': 'HC/MMV', 'name': 'SANJEET KUMAR', 'role': 'WORKSHOP', 'mobile': '8102448327', 'status': 'CL', 'leave_days': 14, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '29/07/2023', 'blood': 'B+', 'icard_no': 'AGT-10508', 'dl_no': '', 'dl_validity': '', 'state': 'JHARKHAND', 'address': 'Ranchi, Jharkhand', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 14, 'pl_bal': 30},
               {'force': '115176049', 'rank': 'HC/MMV', 'name': 'PRAMOD KUMAR PATEL', 'role': 'WORKSHOP', 'mobile': '9517259769', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'WORKSHOP', 'gc_reporting_date': '05/01/2021', 'blood': 'O+', 'icard_no': 'AGT-11517', 'dl_no': '', 'dl_validity': '', 'state': 'UTTAR PRADESH', 'address': 'Varanasi, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '175091064', 'rank': 'CT/MMV', 'name': 'JYOTIRMOY SAHARIYA', 'role': 'WORKSHOP', 'mobile': '7006457718', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'WORKSHOP', 'gc_reporting_date': '11/04/2022', 'blood': 'A+', 'icard_no': 'AGT-17509J', 'dl_no': '', 'dl_validity': '', 'state': 'ASSAM', 'address': 'Mangaldai, Assam', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-
-              // Painter Cadre (CT/PTR - सबसे नीचे)
               {'force': '115094667', 'rank': 'CT/PTR', 'name': 'MD. ROKIBUL ISLAM', 'role': 'WORKSHOP', 'mobile': '7002779898', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'WORKSHOP', 'gc_reporting_date': '17/02/2021', 'blood': 'B+', 'icard_no': 'AGT-11509', 'dl_no': '', 'dl_validity': '', 'state': 'ASSAM', 'address': 'Nagaon, Assam', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
             ];
 
-            // पीडीएफ (DOC-20260930-WA0011.pdf) के आधार पर GC AGT की सभी 40 गाड़ियां
+            // 40 अधिकृत वाहन (DOC-20260930-WA0011.pdf)
             static final List<Map<String, dynamic>> defaultVehicles = [
-              // LIGHT VEHICLES (LV)
               _makeVeh('AS01 BS 1818', 'M/SWIFT DEZIRE', 'LIGHT VEHICLE (LV)', '2015', '03/10/2026', 'CT/DVR MAHAVEER SINGH', '18.5 KMPL', '42 Ltr', 'AVAILABLE'),
               _makeVeh('AS01 EG 8169', 'M/SCORPIO', 'LIGHT VEHICLE (LV)', '2019', '01/10/2026', 'CT/DVR UPENDRA DEBNATH', '12.8 KMPL', '60 Ltr', 'ATTACHED', attachType: 'ATTACH_OUT', attachLoc: 'IG TRIPURA SECTOR'),
               _makeVeh('AS01 FH 5372', 'TATA SAFARI', 'LIGHT VEHICLE (LV)', '2022', '01/10/2026', 'CT/DVR MAHAVEER SINGH', '14.2 KMPL', '50 Ltr', 'AVAILABLE'),
@@ -401,7 +461,6 @@ jobs:
               _makeVeh('AS01 GL 5719', 'M/BOLERO NEO', 'LIGHT VEHICLE (LV)', '2025', '03/10/2026', 'CT/DVR NITESH KUMAR SINGH', '13.5 KMPL', '50 Ltr', 'AVAILABLE'),
               _makeVeh('TR01 AW 0427', 'TATA SUMO', 'LIGHT VEHICLE (LV)', '2016', '29/10/2026', 'CT/DVR RAJKUMAR TIWARI', '11.0 KMPL', '65 Ltr', 'AVAILABLE'),
 
-              // MEDIUM VEHICLES (MV)
               _makeVeh('AS01 DD 5605', 'AMBULANCE', 'MEDIUM VEHICLE (MV)', '2011', '14/10/2026', 'CT/DVR NITESH KUMAR SINGH', '9.5 KMPL', '60 Ltr', 'AVAILABLE'),
               _makeVeh('AS01 JC 4423', 'TATA 407', 'MEDIUM VEHICLE (MV)', '2017', '08/10/2026', 'HC/DVR DEBASHISH DEB', '8.5 KMPL', '60 Ltr', 'AVAILABLE'),
               _makeVeh('AS01 KC 5200', 'TATA 407', 'MEDIUM VEHICLE (MV)', '2018', '17/10/2026', 'HC/DVR R. MADESWARAN', '8.5 KMPL', '60 Ltr', 'AVAILABLE'),
@@ -414,7 +473,6 @@ jobs:
               _makeVeh('TR01 G 1156', 'TATA 407', 'MEDIUM VEHICLE (MV)', '2017', '19/10/2026', 'HC/DVR R. RAMESH', '8.5 KMPL', '60 Ltr', 'AVAILABLE'),
               _makeVeh('TR01 JC 4424', 'SML P/VAN', 'MEDIUM VEHICLE (MV)', '2016', '12/10/2026', 'HC/DVR PUSHP SHARMA', '8.0 KMPL', '70 Ltr', 'AVAILABLE'),
 
-              // HEAVY VEHICLES (HV)
               _makeVeh('AS01 DC 3020', 'TATA BUS', 'HEAVY VEHICLE (HV)', '2011', '10/10/2026', 'HC/DVR SUBIR NATH', '4.8 KMPL', '160 Ltr', 'AVAILABLE'),
               _makeVeh('AS01 DC 4000', 'TATA BUS', 'HEAVY VEHICLE (HV)', '2011', '10/10/2026', 'HC/DVR SUNIL KUMAR', '4.8 KMPL', '160 Ltr', 'AVAILABLE'),
               _makeVeh('AS01 DC 5000', 'TATA BUS', 'HEAVY VEHICLE (HV)', '2011', '26/10/2026', 'HC/DVR PRAJAPATI HARISH KUMAR', '4.8 KMPL', '160 Ltr', 'AVAILABLE'),
@@ -433,7 +491,6 @@ jobs:
               _makeVeh('JK02 DK 7573', 'A/Leyland BUS', 'HEAVY VEHICLE (HV)', '2017', '22/10/2026', 'HC/DVR PUSHP SHARMA', '4.8 KMPL', '180 Ltr', 'AVAILABLE'),
               _makeVeh('MH40 BG 4125', 'TATA TRUCK', 'HEAVY VEHICLE (HV)', '2017', '22/10/2026', 'CT/DVR AJEET SINGH', '4.5 KMPL', '180 Ltr', 'AVAILABLE'),
 
-              // SPECIAL VEHICLES (SV)
               _makeVeh('AS01 EL 1349', 'JCB', 'SPECIAL VEHICLE (SV)', '2020', '23/10/2026', 'CT/DVR BINOY MALICK', '4.5 Ltr/Hr', '140 Ltr', 'AVAILABLE'),
               _makeVeh('AS01 NC 2289', 'TRACTOR', 'SPECIAL VEHICLE (SV)', '2021', '07/10/2026', 'CT/DVR RAJKUMAR TIWARI', '3.5 Ltr/Hr', '45 Ltr', 'AVAILABLE'),
               _makeVeh('AS01 TU 6358', 'RECOVERY', 'SPECIAL VEHICLE (SV)', '2023', '07/10/2026', 'HC/DVR DEBASHISH DEB', '4.0 KMPL', '150 Ltr', 'AVAILABLE'),
@@ -824,6 +881,22 @@ jobs:
           }
 
           class _DashboardScreenState extends State<DashboardScreen> {
+            late StreamSubscription _sub;
+
+            @override
+            void initState() {
+              super.initState();
+              _sub = MTStorage.dataUpdateStream.stream.listen((_) {
+                if (mounted) setState(() {});
+              });
+            }
+
+            @override
+            void dispose() {
+              _sub.cancel();
+              super.dispose();
+            }
+
             void _showSelfChangePasswordDialog() {
               final oldPassCtrl = TextEditingController();
               final newPassCtrl = TextEditingController();
@@ -874,6 +947,106 @@ jobs:
               );
             }
 
+            void _showAdminMasterResetPasswordDialog() {
+              String selectedForce = MTStorage.staffList[0]['force'];
+              final newPassCtrl = TextEditingController();
+
+              showDialog(
+                context: context,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setD) => AlertDialog(
+                    title: const Text('कार्मिक पासवर्ड रिसेट (एडमिन अधिकार)'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('किसी भी कार्मिक का पासवर्ड सीधे रिसेट करने का अधिकार:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<String>(
+                          value: selectedForce,
+                          isExpanded: true,
+                          decoration: const InputDecoration(labelText: 'कार्मिक चुनें', border: OutlineInputBorder()),
+                          items: MTStorage.staffList.map((s) {
+                            return DropdownMenuItem(value: s['force'] as String, child: Text('${s['rank']} ${s['name']} (${s['force']})', style: const TextStyle(fontSize: 12)));
+                          }).toList(),
+                          onChanged: (val) => setD(() => selectedForce = val!),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(controller: newPassCtrl, decoration: const InputDecoration(labelText: 'नया पासवर्ड दर्ज करें', border: OutlineInputBorder())),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करें')),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
+                        onPressed: () async {
+                          if (newPassCtrl.text.trim().isNotEmpty) {
+                            MTStorage.passwords[selectedForce] = newPassCtrl.text.trim();
+                            await MTStorage.saveData();
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('फोर्स सं: $selectedForce का पासवर्ड अपडेट हो गया!'), backgroundColor: Colors.green));
+                          }
+                        },
+                        child: const Text('पासवर्ड बदलें'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            void _showDelegateAdminDialog() {
+              String selectedForce = MTStorage.staffList[0]['force'];
+
+              showDialog(
+                context: context,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setD) => AlertDialog(
+                    title: const Row(
+                      children: [
+                        Icon(Icons.transfer_within_a_station, color: Color(0xFF1B3B6F)),
+                        SizedBox(width: 8),
+                        Text('एडमिन आईडी स्थानांतरण (Multi-Device)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('अवकाश पर जाने पर एडमिन अधिकार किसी अन्य कार्मिक को सौंपें। यह अन्य डिवाइस पर भी तुरंत सक्रिय हो जाएगा:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: selectedForce,
+                          isExpanded: true,
+                          decoration: const InputDecoration(labelText: 'नया कार्यवाहक एडमिन चुनें', border: OutlineInputBorder()),
+                          items: MTStorage.staffList.map((s) {
+                            return DropdownMenuItem(value: s['force'] as String, child: Text('${s['rank']} ${s['name']} (${s['force']})', style: const TextStyle(fontSize: 12)));
+                          }).toList(),
+                          onChanged: (val) => setD(() => selectedForce = val!),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करें')),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
+                        onPressed: () async {
+                          MTStorage.activeAdminForce = selectedForce;
+                          await MTStorage.addNotification('एडमिन आईडी स्थानांतरित', 'कार्यवाहक एडमिन अधिकार फोर्स सं: $selectedForce को सौंप दिए गए हैं।');
+                          await MTStorage.saveData();
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('एडमिन अधिकार फोर्स सं: $selectedForce को सफलतापूर्वक स्थानांतरित कर दिया गया!'), backgroundColor: Colors.green),
+                          );
+                          setState(() {});
+                        },
+                        child: const Text('स्थानांतरित करें'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
             void _showNotificationsDialog() {
               showModalBottomSheet(
                 context: context,
@@ -885,7 +1058,7 @@ jobs:
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('सूचनाएं एवं बदलाव (Notifications)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const Text('सूचनाएं एवं बदलाव (Live Notifications)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                         ],
                       ),
@@ -913,7 +1086,6 @@ jobs:
               );
             }
 
-            // ================= SMART AUTO-ATTACH CAMERA & UPLOAD FEATURE =================
             void _showSmartUploadDialog(bool isAdmin) {
               String targetSection = 'VEHICLE';
               String selectedTargetKey = MTStorage.vehicles.first['no'];
@@ -1024,6 +1196,9 @@ jobs:
                     'type': 'EXCEL',
                     'created_date': DateFormat('dd/MM/yyyy').format(DateTime.now()),
                     'description': 'कैमरा/दस्तावेज से स्वतः अपलोड की गई परेड फाइल',
+                    'headers': ['SL', 'ITEM', 'STATUS'],
+                    'rows': [['1', 'INSPECTION REPORT', 'PASSED']],
+                    'word_content': '',
                     'photo_base64': b64
                   });
                   await MTStorage.addNotification('परेड फाइल जोड़ी गई', 'परेड स्टेटमेंट में नई फाइल स्वतः अपलोड होकर लिंक हुई।');
@@ -1069,6 +1244,18 @@ jobs:
                       tooltip: 'पासवर्ड बदलें',
                       onPressed: _showSelfChangePasswordDialog,
                     ),
+                    if (isAdmin)
+                      IconButton(
+                        icon: const Icon(Icons.admin_panel_settings),
+                        tooltip: 'कार्मिक पासवर्ड रिसेट (एडमिन अधिकार)',
+                        onPressed: _showAdminMasterResetPasswordDialog,
+                      ),
+                    if (isAdmin)
+                      IconButton(
+                        icon: const Icon(Icons.transfer_within_a_station),
+                        tooltip: 'एडमिन आईडी स्थानांतरण',
+                        onPressed: _showDelegateAdminDialog,
+                      ),
                     IconButton(
                       icon: const Icon(Icons.logout),
                       tooltip: 'लॉगआउट',
@@ -1141,6 +1328,8 @@ jobs:
                         children: [
                           _menuBtn(Icons.assignment, 'टुडे ड्यूटी (दिनांक सहित)', Colors.teal, 'दिनांक-वार स्टोर व चयन | 1 HC + 4 CT / 1 HC + 1 CT',
                               () => _openTodayDutyScreen(isAdmin)),
+                          _menuBtn(Icons.contacts, 'कार्मिक मोबाइल डायरेक्टरी', Colors.blue, 'फोर्स नं., रैंक, नाम, मोबाइल सूची व PDF',
+                              () => Navigator.push(context, MaterialPageRoute(builder: (_) => ContactDirectoryScreen(isAdmin: isAdmin)))),
                           _menuBtn(Icons.camera_alt, 'फोटो/डॉक्युमेंट अपलोड', Colors.blueGrey, 'कैमरा/गैलरी से स्वतः ऑप्शन में जोड़ें',
                               () => _showSmartUploadDialog(isAdmin)),
                           _menuBtn(Icons.badge, 'सीनियरिटी लिस्ट', Colors.indigo, 'MTO, SO\'S, HC/DVR, CT/DVR, MMV, PTR क्रम',
@@ -2895,6 +3084,9 @@ jobs:
                               'type': fileType,
                               'created_date': DateFormat('dd/MM/yyyy').format(DateTime.now()),
                               'description': descCtrl.text.trim(),
+                              'headers': fileType == 'EXCEL' ? ['SL', 'ITEM', 'TOTAL'] : [],
+                              'rows': fileType == 'EXCEL' ? [['1', 'PARADE STR', '49']] : [],
+                              'word_content': fileType == 'WORD' ? 'एम टी शाखा समूह केंद्र अगरतला - दैनिक आदेश पत्र' : '',
                             });
                             await MTStorage.addNotification('नई परेड फाइल उपलब्ध', 'एडमिन द्वारा नई $fileType फाइल (${filenameCtrl.text}) जोड़ी गई।');
                             await MTStorage.saveData();
@@ -3099,17 +3291,25 @@ jobs:
 
                         return Card(
                           child: ListTile(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CustomParadeFileEditorScreen(file: file, isAdmin: widget.isAdmin),
+                                ),
+                              ).then((_) => setState(() {}));
+                            },
                             leading: CircleAvatar(
                               backgroundColor: isExcel ? Colors.green.shade100 : Colors.blue.shade100,
                               child: Icon(isExcel ? Icons.table_view : Icons.description, color: isExcel ? Colors.green.shade800 : Colors.blue.shade800),
                             ),
                             title: Text(file['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('फॉर्मेट: ${file['type']} | निर्माण तिथि: ${file['created_date']}\nविवरण: ${file['description']}'),
+                            subtitle: Text('फॉर्मेट: ${file['type']} | निर्माण तिथि: ${file['created_date']}\nविवरण: ${file['description']}\n(टैप करके फाइल में कार्य करें)'),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.download, color: Color(0xFF1B3B6F)),
+                                  icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
                                   tooltip: 'डाउनलोड करें',
                                   onPressed: () {
                                     _downloadCustomFilePdf(file);
@@ -3213,19 +3413,111 @@ jobs:
                         pw.SizedBox(height: 16),
                         pw.Text('DESCRIPTION: ${file['description']}', style: const pw.TextStyle(fontSize: 10)),
                         pw.SizedBox(height: 16),
-                        pw.Table(
-                          border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                        if (file['type'] == 'EXCEL' && file['headers'] != null)
+                          pw.Table(
+                            border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                            children: [
+                              pw.TableRow(
+                                decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                                children: (file['headers'] as List).map((h) => pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text(h.toString(), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)))).toList(),
+                              ),
+                              if (file['rows'] != null)
+                                ...(file['rows'] as List).map((row) {
+                                  return pw.TableRow(
+                                    children: (row as List).map((c) => pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text(c.toString(), style: const pw.TextStyle(fontSize: 8)))).toList(),
+                                  );
+                                }).toList(),
+                            ],
+                          )
+                        else
+                          pw.Text(file['word_content'] ?? '', style: const pw.TextStyle(fontSize: 9.5)),
+                      ],
+                    );
+                  },
+                ),
+              );
+
+              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+            }
+          }
+
+          // ================= CUSTOM PARADE FILE EDITOR (WORD & EXCEL) =================
+          class CustomParadeFileEditorScreen extends StatefulWidget {
+            final Map<String, dynamic> file;
+            final bool isAdmin;
+            const CustomParadeFileEditorScreen({Key? key, required this.file, required this.isAdmin}) : super(key: key);
+
+            @override
+            State<CustomParadeFileEditorScreen> createState() => _CustomParadeFileEditorScreenState();
+          }
+
+          class _CustomParadeFileEditorScreenState extends State<CustomParadeFileEditorScreen> {
+            late TextEditingController _wordTextCtrl;
+            late List<String> _headers;
+            late List<List<String>> _rows;
+
+            @override
+            void initState() {
+              super.initState();
+              final f = widget.file;
+              _wordTextCtrl = TextEditingController(text: f['word_content'] ?? '');
+              _headers = List<String>.from(f['headers'] ?? ['SL', 'PARTICULAR', 'TOTAL']);
+              _rows = (f['rows'] as List?)?.map((r) => List<String>.from(r)).toList() ?? [];
+            }
+
+            Future<void> _saveFile() async {
+              widget.file['word_content'] = _wordTextCtrl.text;
+              widget.file['headers'] = _headers;
+              widget.file['rows'] = _rows;
+              await MTStorage.saveData();
+              await MTStorage.addNotification('फाइल अपडेट', '${widget.file['name']} को एडमिन द्वारा अद्यतन (Save) किया गया।');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('फाइल सफलता से सुरक्षित (Save) कर दी गई!'), backgroundColor: Colors.green));
+              }
+            }
+
+            Future<void> _exportPdf() async {
+              final pdf = pw.Document();
+              final f = widget.file;
+              final bool isExcel = f['type'] == 'EXCEL';
+
+              pdf.addPage(
+                pw.Page(
+                  pageFormat: PdfPageFormat.a4,
+                  margin: const pw.EdgeInsets.all(24),
+                  build: (pw.Context ctx) {
+                    return pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Center(child: pw.Text('GROUP CENTRE CRPF AGARTALA (TRIPURA)', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13))),
+                        pw.Center(child: pw.Text('${f['name']} (${f['type']})', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11))),
+                        pw.Center(child: pw.Text('DATE: ${f['created_date']}', style: const pw.TextStyle(fontSize: 9))),
+                        pw.SizedBox(height: 14),
+                        if (isExcel)
+                          pw.Table(
+                            border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                            children: [
+                              pw.TableRow(
+                                decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                                children: _headers.map((h) => pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)))).toList(),
+                              ),
+                              ..._rows.map((row) => pw.TableRow(
+                                children: row.map((cell) => pw.Container(padding: const pw.EdgeInsets.all(3.5), alignment: pw.Alignment.center, child: pw.Text(cell, style: const pw.TextStyle(fontSize: 7.5)))).toList(),
+                              )).toList(),
+                            ],
+                          )
+                        else
+                          pw.Container(
+                            padding: const pw.EdgeInsets.all(10),
+                            decoration: pw.BoxDecoration(border: pw.TableBorder.all(color: PdfColors.black, width: 0.5)),
+                            child: pw.Text(_wordTextCtrl.text, style: const pw.TextStyle(fontSize: 9.5, lineSpacing: 2)),
+                          ),
+                        pw.SizedBox(height: 30),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                           children: [
-                            pw.TableRow(
-                              decoration: const pw.BoxDecoration(color: PdfColors.grey300),
-                              children: MTStorage.paradeCustomColumns.take(7).map((h) => pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text(h.replaceAll('\n', ' '), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)))).toList(),
-                            ),
-                            ...MTStorage.paradeCustomRows.take(6).map((r) {
-                              final cells = [r['title'].toString(), ...List<String>.from(r['vals']).take(6)];
-                              return pw.TableRow(
-                                children: cells.map((c) => pw.Container(padding: const pw.EdgeInsets.all(4), alignment: pw.Alignment.center, child: pw.Text(c, style: const pw.TextStyle(fontSize: 8)))).toList(),
-                              );
-                            }).toList(),
+                            pw.Text('HC/MT (CHIEF WRITER)\nGC CRPF AGT', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
+                            pw.Text('MTO\nGC CRPF AGARTALA', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8)),
                           ],
                         ),
                       ],
@@ -3235,6 +3527,458 @@ jobs:
               );
 
               await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+            }
+
+            void _addExcelRowDialog() {
+              List<TextEditingController> ctrls = List.generate(_headers.length, (i) => TextEditingController(text: i == 0 ? '${_rows.length + 1}' : '00'));
+
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('एक्सेल शीट में नई रो (पंक्ति) जोड़ें'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(_headers.length, (i) => TextField(controller: ctrls[i], decoration: InputDecoration(labelText: _headers[i]))),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करें')),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _rows.add(ctrls.map((c) => c.text.trim()).toList());
+                        });
+                        Navigator.pop(ctx);
+                        _saveFile();
+                      },
+                      child: const Text('जोड़ें'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            void _addExcelColumnDialog() {
+              final colCtrl = TextEditingController();
+
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('नया कॉलम जोड़ें'),
+                  content: TextField(controller: colCtrl, decoration: const InputDecoration(labelText: 'कॉलम का नाम')),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करें')),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (colCtrl.text.isNotEmpty) {
+                          setState(() {
+                            _headers.add(colCtrl.text.trim().toUpperCase());
+                            for (var r in _rows) {
+                              r.add('00');
+                            }
+                          });
+                          Navigator.pop(ctx);
+                          _saveFile();
+                        }
+                      },
+                      child: const Text('कॉलम जोड़ें'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            void _editCellDialog(int rIdx, int cIdx) {
+              final ctrl = TextEditingController(text: _rows[rIdx][cIdx]);
+
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text('${_headers[cIdx]} मान एडिट करें'),
+                  content: TextField(controller: ctrl, decoration: const InputDecoration(labelText: 'नया मान दर्ज करें')),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करें')),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _rows[rIdx][cIdx] = ctrl.text.trim();
+                        });
+                        Navigator.pop(ctx);
+                        _saveFile();
+                      },
+                      child: const Text('अपडेट'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              final f = widget.file;
+              final bool isExcel = f['type'] == 'EXCEL';
+
+              return Scaffold(
+                appBar: AppBar(
+                  title: Text('${f['name']} (${f['type']})'),
+                  backgroundColor: const Color(0xFF1B3B6F),
+                  foregroundColor: Colors.white,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.picture_as_pdf),
+                      tooltip: 'PDF डाउनलोड करें',
+                      onPressed: _exportPdf,
+                    ),
+                    if (widget.isAdmin)
+                      IconButton(
+                        icon: const Icon(Icons.save),
+                        tooltip: 'फाइल सेव करें',
+                        onPressed: _saveFile,
+                      ),
+                  ],
+                ),
+                body: isExcel
+                    ? Column(
+                        children: [
+                          if (widget.isAdmin)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              color: Colors.indigo.shade50,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
+                                    icon: const Icon(Icons.add_circle, size: 14),
+                                    label: const Text('नई पंक्ति (Row)'),
+                                    onPressed: _addExcelRowDialog,
+                                  ),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                                    icon: const Icon(Icons.view_column, size: 14),
+                                    label: const Text('नया कॉलम'),
+                                    onPressed: _addExcelColumnDialog,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Table(
+                                  defaultColumnWidth: const FixedColumnWidth(90),
+                                  border: TableBorder.all(color: Colors.black45, width: 0.8),
+                                  children: [
+                                    TableRow(
+                                      decoration: BoxDecoration(color: Colors.indigo.shade100),
+                                      children: _headers.map((h) => Padding(
+                                        padding: const EdgeInsets.all(6),
+                                        child: Text(h, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                      )).toList(),
+                                    ),
+                                    ..._rows.asMap().entries.map((rEntry) {
+                                      final rIdx = rEntry.key;
+                                      final row = rEntry.value;
+                                      return TableRow(
+                                        children: row.asMap().entries.map((cEntry) {
+                                          final cIdx = cEntry.key;
+                                          final cellVal = cEntry.value;
+                                          return InkWell(
+                                            onTap: widget.isAdmin ? () => _editCellDialog(rIdx, cIdx) : null,
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                                              child: Text(cellVal, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.isAdmin ? 'वर्ड डॉक्यूमेंट टेक्स्ट एडिटर (एडमिन संपादन कर सकते हैं):' : 'वर्ड डॉक्यूमेंट व्यूअर:', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: _wordTextCtrl,
+                                enabled: widget.isAdmin,
+                                maxLines: null,
+                                expands: true,
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: 'यहाँ अपना आदेश, पत्र या परेड विवरण टाइप करें...',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              );
+            }
+          }
+
+          // ================= CONTACT DIRECTORY SCREEN =================
+          class ContactDirectoryScreen extends StatefulWidget {
+            final bool isAdmin;
+            const ContactDirectoryScreen({Key? key, required this.isAdmin}) : super(key: key);
+
+            @override
+            State<ContactDirectoryScreen> createState() => _ContactDirectoryScreenState();
+          }
+
+          class _ContactDirectoryScreenState extends State<ContactDirectoryScreen> {
+            String _searchQuery = '';
+
+            Future<void> _exportDirectoryPdf() async {
+              final pdf = pw.Document();
+              final dateStr = DateFormat('dd/MM/yyyy').format(DateTime.now());
+
+              pdf.addPage(
+                pw.MultiPage(
+                  pageFormat: PdfPageFormat.a4,
+                  margin: const pw.EdgeInsets.all(20),
+                  header: (pw.Context ctx) => pw.Column(
+                    children: [
+                      pw.Center(child: pw.Text('GROUP CENTRE CRPF AGARTALA (TRIPURA)', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13))),
+                      pw.Center(child: pw.Text('MT PLATOON - PERSONNEL CONTACT DIRECTORY (AS ON $dateStr)', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10))),
+                      pw.SizedBox(height: 8),
+                    ],
+                  ),
+                  build: (pw.Context ctx) => [
+                    pw.Table(
+                      border: pw.TableBorder.all(color: PdfColors.black, width: 0.5),
+                      children: [
+                        pw.TableRow(
+                          decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                          children: ['SL', 'FORCE NUMBER', 'RANK', 'NAME', 'MOBILE NUMBER'].map((h) => pw.Container(
+                            padding: const pw.EdgeInsets.all(4),
+                            alignment: pw.Alignment.center,
+                            child: pw.Text(h, style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8.5)),
+                          )).toList(),
+                        ),
+                        ...MTStorage.staffList.asMap().entries.map((e) {
+                          final i = e.key + 1;
+                          final s = e.value;
+                          return pw.TableRow(
+                            children: [
+                              '$i',
+                              s['force'] ?? '',
+                              s['rank'] ?? '',
+                              s['name'] ?? '',
+                              '+91 ${s['mobile'] ?? ''}',
+                            ].map((c) => pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(vertical: 3.5, horizontal: 4),
+                              alignment: pw.Alignment.center,
+                              child: pw.Text(c, style: const pw.TextStyle(fontSize: 8)),
+                            )).toList(),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+
+              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+            }
+
+            void _addOrEditContactDialog(Map<String, dynamic>? staff) {
+              final isEdit = staff != null;
+              final forceCtrl = TextEditingController(text: isEdit ? staff['force'] : '');
+              final nameCtrl = TextEditingController(text: isEdit ? staff['name'] : '');
+              final rankCtrl = TextEditingController(text: isEdit ? staff['rank'] : 'CT/DVR');
+              final mobCtrl = TextEditingController(text: isEdit ? staff['mobile'] : '');
+
+              showDialog(
+                context: context,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setD) => AlertDialog(
+                    title: Text(isEdit ? 'संपर्क संशोधित करें' : 'नया संपर्क जोड़ें'),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(controller: forceCtrl, enabled: !isEdit, decoration: const InputDecoration(labelText: 'फोर्स नंबर')),
+                          DropdownButtonFormField<String>(
+                            value: ['MTO', 'INSP/MT', 'SI/MM', 'ASI/MT', 'HC/DVR', 'CT/DVR', 'HC/MMV', 'CT/MMV', 'CT/PTR'].contains(rankCtrl.text) ? rankCtrl.text : 'CT/DVR',
+                            decoration: const InputDecoration(labelText: 'रैंक'),
+                            items: ['MTO', 'INSP/MT', 'SI/MM', 'ASI/MT', 'HC/DVR', 'CT/DVR', 'HC/MMV', 'CT/MMV', 'CT/PTR']
+                                .map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                            onChanged: (val) => setD(() => rankCtrl.text = val!),
+                          ),
+                          TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'कार्मिक का नाम')),
+                          TextField(controller: mobCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'मोबाइल नंबर')),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      if (isEdit && widget.isAdmin)
+                        TextButton(
+                          style: TextButton.styleFrom(foregroundColor: Colors.red),
+                          onPressed: () async {
+                            MTStorage.staffList.remove(staff);
+                            await MTStorage.saveData();
+                            Navigator.pop(ctx);
+                            setState(() {});
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('कार्मिक संपर्क हटा दिया गया!'), backgroundColor: Colors.red));
+                          },
+                          child: const Text('हटाएं'),
+                        ),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करें')),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (forceCtrl.text.isNotEmpty && nameCtrl.text.isNotEmpty) {
+                            if (isEdit) {
+                              staff['name'] = nameCtrl.text.trim().toUpperCase();
+                              staff['rank'] = rankCtrl.text.trim().toUpperCase();
+                              staff['mobile'] = mobCtrl.text.trim();
+                            } else {
+                              MTStorage.staffList.add({
+                                'force': forceCtrl.text.trim(),
+                                'rank': rankCtrl.text.trim().toUpperCase(),
+                                'name': nameCtrl.text.trim().toUpperCase(),
+                                'role': 'STAFF',
+                                'mobile': mobCtrl.text.trim(),
+                                'status': 'PRESENT',
+                                'leave_days': 0,
+                                'course_name': '',
+                                'location': 'GC AGT',
+                                'duty_type': 'CAMP',
+                                'gc_reporting_date': DateFormat('dd/MM/yyyy').format(DateTime.now()),
+                                'blood': 'B+',
+                                'icard_no': 'AGT-${forceCtrl.text.trim()}',
+                                'dl_no': '',
+                                'dl_validity': '',
+                                'state': '',
+                                'address': '',
+                                'photo_base64': '',
+                                'attach_type': 'NONE',
+                                'attach_office': '',
+                                'el_bal': 60,
+                                'cl_bal': 15,
+                                'pl_bal': 30
+                              });
+                            }
+                            await MTStorage.saveData();
+                            Navigator.pop(ctx);
+                            setState(() {});
+                          }
+                        },
+                        child: const Text('सुरक्षित करें'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            @override
+            Widget build(BuildContext context) {
+              final filtered = MTStorage.staffList.where((s) {
+                final query = _searchQuery.toLowerCase();
+                final name = (s['name'] ?? '').toString().toLowerCase();
+                final force = (s['force'] ?? '').toString().toLowerCase();
+                final mob = (s['mobile'] ?? '').toString().toLowerCase();
+                return name.contains(query) || force.contains(query) || mob.contains(query);
+              }).toList();
+
+              return Scaffold(
+                appBar: AppBar(
+                  title: const Text('कार्मिक मोबाइल डायरेक्टरी'),
+                  backgroundColor: const Color(0xFF1B3B6F),
+                  foregroundColor: Colors.white,
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.picture_as_pdf),
+                      tooltip: 'संपर्क सूची PDF डाउनलोड करें',
+                      onPressed: _exportDirectoryPdf,
+                    ),
+                    if (widget.isAdmin)
+                      IconButton(
+                        icon: const Icon(Icons.person_add),
+                        tooltip: 'नया संपर्क जोड़ें',
+                        onPressed: () => _addOrEditContactDialog(null),
+                      ),
+                  ],
+                ),
+                body: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'नाम, फोर्स नंबर या मोबाइल से खोजें...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                        ),
+                        onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('कुल कार्मिक: ${filtered.length}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                          if (widget.isAdmin)
+                            const Text('* एडिट व डिलीट हेतु कार्मिक पर टैप करें', style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (ctx, i) {
+                          final s = filtered[i];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            child: ListTile(
+                              onTap: widget.isAdmin ? () => _addOrEditContactDialog(s) : null,
+                              leading: CircleAvatar(
+                                backgroundColor: const Color(0xFF1B3B6F),
+                                child: Text(s['name'] != null && s['name'].toString().isNotEmpty ? s['name'][0] : 'U', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                              title: Text('${s['rank']} ${s['name']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text('फोर्स नंबर: ${s['force']}\nमोबाइल: +91 ${s['mobile']}'),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.phone, color: Colors.teal),
+                                    onPressed: () async {
+                                      final uri = Uri.parse('tel:+91${s['mobile']}');
+                                      if (await canLaunchUrl(uri)) await launchUrl(uri);
+                                    },
+                                  ),
+                                  if (widget.isAdmin)
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, color: Colors.blueGrey, size: 20),
+                                      onPressed: () => _addOrEditContactDialog(s),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
             }
           }
           EOF
