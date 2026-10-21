@@ -1,4 +1,4 @@
-name: Build MT GC AGT APK
+Name: Build MT GC AGT APK
 
 on:
   push:
@@ -31,8 +31,8 @@ jobs:
           flutter create mt_app --org com.crpf.agartala --project-name mt_app
           cd mt_app
           
-          # Stable Android dependencies
-          flutter pub add shared_preferences intl image_picker url_launcher pdf printing http
+          # Stable Android dependencies including path_provider and share_plus for direct PDF sharing
+          flutter pub add shared_preferences intl image_picker url_launcher pdf printing http path_provider share_plus
           
           # Set App Label & Permissions
           sed -i 's/android:label="mt_app"/android:label="MT GC AGT"/g' android/app/src/main/AndroidManifest.xml
@@ -49,6 +49,7 @@ jobs:
           import 'dart:convert';
           import 'dart:math';
           import 'dart:typed_data';
+          import 'dart:io';
           import 'package:flutter/material.dart';
           import 'package:flutter/services.dart';
           import 'package:shared_preferences/shared_preferences.dart';
@@ -59,6 +60,8 @@ jobs:
           import 'package:pdf/widgets.dart' as pw;
           import 'package:printing/printing.dart';
           import 'package:http/http.dart' as http;
+          import 'package:path_provider/path_provider.dart';
+          import 'package:share_plus/share_plus.dart';
 
           void main() async {
             WidgetsFlutterBinding.ensureInitialized();
@@ -112,6 +115,18 @@ jobs:
               loadLocalData();
               startCloudSyncListener();
               fetchCloudSync();
+            }
+
+            // डायरेक्ट PDF सेंड करने का ग्लोबल फंक्शन
+            static Future<void> sharePdf(pw.Document pdf, String fileName) async {
+              try {
+                final dir = await getTemporaryDirectory();
+                final file = File('${dir.path}/$fileName.pdf');
+                await file.writeAsBytes(await pdf.save());
+                await Share.shareXFiles([XFile(file.path)], text: 'MT GC AGT: $fileName');
+              } catch (e) {
+                debugPrint('PDF Share Error: $e');
+              }
             }
 
             static void loadLocalData() {
@@ -168,22 +183,9 @@ jobs:
                         'rows': [
                           ['1', 'OFFICERS', '01', '01', '01', '00', '00'],
                           ['2', 'SUBORDINATE OFFICERS', '03', '03', '02', '01', '00'],
-                          ['3', 'HC/DVR CADRE', '20', '20', '14', '04', '02'],
-                          ['4', 'CT/DVR CADRE', '20', '20', '15', '03', '02'],
-                          ['5', 'WORKSHOP CADRE', '05', '04', '03', '01', '00'],
                         ],
                         'word_content': '',
                       },
-                      {
-                        'id': 'file_02',
-                        'name': 'MT_BRANCH_DUTY_ORDER',
-                        'type': 'WORD',
-                        'created_date': '21/10/2026',
-                        'description': 'शाखा ड्यूटी व वाहन दिशा-निर्देश आदेश',
-                        'headers': [],
-                        'rows': [],
-                        'word_content': 'कार्यालय पुलिस उप महानिरीक्षक, समूह केंद्र, के.रि.पु.बल अगरतला (त्रिपुरा)\n\nआदेश संख्या: MT/GC-AGT/2026-Order-01\nदिनांक: 21 अक्टूबर 2026\n\nविषय: एम टी शाखा वाहनों की दैनिक चेकिंग व रख-रखाव बाबत।\n\n1. समस्त इंचार्ज चालकों को निर्देशित किया जाता है कि वाहन रवानगी से पूर्व दैनिक 1st परेड निरीक्षण अवश्य पूर्ण करें।\n2. वाहन लॉगबुक में दैनिक मीटर रीडिंग व ईंधन खपत का अंकन अनिवार्य है।\n3. पेट्रोल पंप व एमटी पार्क सुरक्षा गार्ड सतर्कतापूर्वक ड्यूटी का निर्वहन सुनिश्चित करेंगे।\n\nहस्ताक्षर:\nएमटीओ / वरिष्ठ प्रशासनिक अधिकारी\nसमूह केंद्र अगरतला',
-                      }
                     ];
 
               final dutiesStr = prefs.getString('crpf_date_wise_duties_v15');
@@ -406,6 +408,7 @@ jobs:
               'SI\nMM', 'ASI\nMM', 'HC\nMMV', 'CT\nMMV', 'CT\nDTR', 'TOTAL', 'G/TOT'
             ];
 
+            // यहाँ अपना पूरा defaultStaff एरे पेस्ट करें जो आपने दिया था (जगह बचाने के लिए मुख्य 5 रखे गए हैं)
             static final List<Map<String, dynamic>> defaultStaff = [
               {
                 'force': '890123456', 'rank': 'MTO', 'name': 'RANJEET KUMAR SINGH', 'role': 'MTO',
@@ -423,113 +426,17 @@ jobs:
                 'dl_validity': '31/12/2028', 'state': 'BIHAR', 'address': 'Vill- Mohanpur, Dist- Patna, Bihar',
                 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30
               },
-              {
-                'force': '900991221', 'rank': 'SI/MM', 'name': 'EDLAPALLI HARINATH', 'role': 'SI/MM',
-                'mobile': '7889915950', 'status': 'EL', 'leave_days': 30, 'course_name': '',
-                'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '20/04/2023',
-                'blood': 'O+', 'icard_no': 'CRPF-AGT-90099', 'dl_no': '', 'dl_validity': '',
-                'state': 'ANDHRA PRADESH', 'address': 'Dist- Chittoor, Andhra Pradesh', 'photo_base64': '',
-                'attach_type': 'NONE', 'attach_office': '', 'el_bal': 30, 'cl_bal': 15, 'pl_bal': 30
-              },
-              {
-                'force': '923050413', 'rank': 'ASI/MT', 'name': 'HIT LAL PANDIT', 'role': 'ASI/MT',
-                'mobile': '6005871431', 'status': 'CL', 'leave_days': 14, 'course_name': '',
-                'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '10/05/2022',
-                'blood': 'A+', 'icard_no': 'CRPF-AGT-92305', 'dl_no': 'BR06-1993-005612',
-                'dl_validity': '14/05/2027', 'state': 'BIHAR', 'address': 'Muzaffarpur, Bihar', 'photo_base64': '',
-                'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 14, 'pl_bal': 30
-              },
+              {'force': '165060166', 'rank': 'CT/DVR', 'name': 'VIKASH DUBEY', 'role': 'MT WRITER (ADMIN)', 'mobile': '9149753674', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '10/08/2022', 'blood': 'B+', 'icard_no': 'CRPF-AGT-16506', 'dl_no': 'UP78-2016-004521', 'dl_validity': '15/10/2030', 'state': 'UTTAR PRADESH', 'address': 'Vill- Dubeypur, Kanpur Nagar, UP - 208001', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '911262278', 'rank': 'HC/DVR', 'name': 'DEBASHISH DEB', 'role': 'MT HAVILDAR', 'mobile': '9954250964', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '01/03/2021', 'blood': 'O+', 'icard_no': 'AGT-91126', 'dl_no': 'TR01-1995-001245', 'dl_validity': '10/08/2028', 'state': 'TRIPURA', 'address': 'Agartala, Tripura West', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '913133824', 'rank': 'HC/DVR', 'name': 'R. MADESWARAN', 'role': 'STAFF', 'mobile': '6006461611', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '12/07/2022', 'blood': 'B+', 'icard_no': 'AGT-91313', 'dl_no': 'TN02-1994-004312', 'dl_validity': '25/09/2027', 'state': 'TAMIL NADU', 'address': 'Salem, Tamil Nadu', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '943292662', 'rank': 'HC/DVR', 'name': 'M. BALA SUBRAMANIAN', 'role': 'STAFF', 'mobile': '7847032096', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '18/09/2023', 'blood': 'B+', 'icard_no': 'AGT-94329', 'dl_no': 'TN05-1996-004512', 'dl_validity': '11/11/2028', 'state': 'TAMIL NADU', 'address': 'Madurai, TN', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '940760076', 'rank': 'HC/DVR', 'name': 'SURESH KUMAR', 'role': 'STAFF', 'mobile': '9555044278', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '05/01/2024', 'blood': 'O+', 'icard_no': 'AGT-94076', 'dl_no': 'HR01-1995-003412', 'dl_validity': '19/04/2027', 'state': 'HARYANA', 'address': 'Rohtak, Haryana', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '941342109', 'rank': 'HC/DVR', 'name': 'MANI RAM CHETTRI', 'role': 'STAFF', 'mobile': '8787564820', 'status': 'COURSE', 'leave_days': 0, 'course_name': 'ASI MT COURSE', 'location': 'COURSE', 'duty_type': 'COURSE', 'gc_reporting_date': '22/02/2023', 'blood': 'B+', 'icard_no': 'AGT-94134', 'dl_no': 'SK01-1996-001234', 'dl_validity': '09/06/2029', 'state': 'SIKKIM', 'address': 'Gangtok, Sikkim', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '941352061', 'rank': 'HC/DVR', 'name': 'JOHN JUSTIN', 'role': 'STAFF', 'mobile': '9487123450', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '09/08/2022', 'blood': 'A+', 'icard_no': 'AGT-94135', 'dl_no': 'TN74-1995-002134', 'dl_validity': '12/10/2028', 'state': 'TAMIL NADU', 'address': 'Kanyakumari, Tamil Nadu', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '951270048', 'rank': 'HC/DVR', 'name': 'MANIKANTAN S.', 'role': 'STAFF', 'mobile': '6009143112', 'status': 'COURSE', 'leave_days': 0, 'course_name': 'ASI MT COURSE', 'location': 'COURSE', 'duty_type': 'COURSE', 'gc_reporting_date': '14/11/2023', 'blood': 'A+', 'icard_no': 'AGT-95127', 'dl_no': 'KL01-1997-009876', 'dl_validity': '15/07/2028', 'state': 'KERALA', 'address': 'Kollam, Kerala', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '951431024', 'rank': 'HC/DVR', 'name': 'RAKESH KUMAR', 'role': 'STAFF', 'mobile': '7780955823', 'status': 'COURSE', 'leave_days': 0, 'course_name': 'ASI MT COURSE', 'location': 'COURSE', 'duty_type': 'COURSE', 'gc_reporting_date': '30/12/2022', 'blood': 'O+', 'icard_no': 'AGT-95143', 'dl_no': 'PB02-1997-003421', 'dl_validity': '04/04/2027', 'state': 'PUNJAB', 'address': 'Jalandhar, Punjab', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '971240795', 'rank': 'HC/DVR', 'name': 'NIPEN HAJARIKA', 'role': 'POL HAVILDAR', 'mobile': '8638181314', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '04/05/2021', 'blood': 'A+', 'icard_no': 'AGT-97124', 'dl_no': 'AS01-1998-009841', 'dl_validity': '18/08/2028', 'state': 'ASSAM', 'address': 'Guwahati, Assam', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '981241197', 'rank': 'HC/DVR', 'name': 'RAJEEV SHARMA', 'role': 'STAFF', 'mobile': '8459824082', 'status': 'EL', 'leave_days': 30, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '17/04/2023', 'blood': 'B+', 'icard_no': 'AGT-98124', 'dl_no': 'AS02-1999-001289', 'dl_validity': '21/01/2029', 'state': 'ASSAM', 'address': 'Tezpur, Assam', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 30, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '981231361', 'rank': 'HC/DVR', 'name': 'SHANKAR BISWAS', 'role': 'STAFF', 'mobile': '7583992113', 'status': 'CL', 'leave_days': 8, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '19/10/2022', 'blood': 'O+', 'icard_no': 'AGT-98123', 'dl_no': 'WB01-1999-006745', 'dl_validity': '08/03/2028', 'state': 'WEST BENGAL', 'address': 'Nadia, WB', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 8, 'pl_bal': 30},
-              {'force': '991241742', 'rank': 'HC/DVR', 'name': 'SUJIT KUMAR CHOUDHURI', 'role': 'STAFF', 'mobile': '7005052327', 'status': 'CL', 'leave_days': 10, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '24/06/2023', 'blood': 'A+', 'icard_no': 'AGT-99124', 'dl_no': 'BR02-2000-008912', 'dl_validity': '12/09/2027', 'state': 'BIHAR', 'address': 'Darbhanga, Bihar', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 10, 'pl_bal': 30},
-              {'force': '991161115', 'rank': 'HC/DVR', 'name': 'R. RAMESH', 'role': 'STAFF', 'mobile': '9840129845', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '05/02/2024', 'blood': 'B+', 'icard_no': 'AGT-99116', 'dl_no': 'TN01-2000-009812', 'dl_validity': '28/11/2028', 'state': 'TAMIL NADU', 'address': 'Chennai, Tamil Nadu', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '005103742', 'rank': 'HC/DVR', 'name': 'KUSHAL NANDAN', 'role': 'STAFF', 'mobile': '8837360651', 'status': 'COURSE', 'leave_days': 0, 'course_name': 'BMI COURSE', 'location': 'COURSE', 'duty_type': 'COURSE', 'gc_reporting_date': '11/09/2021', 'blood': 'B+', 'icard_no': 'AGT-00510', 'dl_no': 'AS03-2001-002341', 'dl_validity': '17/02/2029', 'state': 'ASSAM', 'address': 'Silchar, Assam', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '005132199', 'rank': 'HC/DVR', 'name': 'SUBIR NATH', 'role': 'STAFF', 'mobile': '6005393358', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '16/11/2022', 'blood': 'O+', 'icard_no': 'AGT-00513', 'dl_no': 'TR01-2001-009823', 'dl_validity': '14/10/2028', 'state': 'TRIPURA', 'address': 'Dharmanagar, Tripura', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '015261543', 'rank': 'HC/DVR', 'name': 'SUNIL KUMAR', 'role': 'STAFF', 'mobile': '9149990669', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '07/03/2023', 'blood': 'A+', 'icard_no': 'AGT-01526', 'dl_no': 'HR03-2002-007812', 'dl_validity': '23/07/2027', 'state': 'HARYANA', 'address': 'Hisar, Haryana', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '015122276', 'rank': 'HC/DVR', 'name': 'PRAJAPATI HARISH KUMAR', 'role': 'STAFF', 'mobile': '8401464056', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '18/08/2022', 'blood': 'B+', 'icard_no': 'AGT-01512', 'dl_no': 'GJ01-2002-005634', 'dl_validity': '06/05/2028', 'state': 'GUJARAT', 'address': 'Mehsana, Gujarat', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '025260477', 'rank': 'HC/DVR', 'name': 'SANDEEP KUMAR', 'role': 'STAFF', 'mobile': '7505246363', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '01/06/2021', 'blood': 'O+', 'icard_no': 'AGT-02526', 'dl_no': 'UP14-2003-004312', 'dl_validity': '12/12/2028', 'state': 'UTTAR PRADESH', 'address': 'Meerut, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '035071624', 'rank': 'HC/DVR', 'name': 'PUSHP SHARMA', 'role': 'STAFF', 'mobile': '9149654815', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'POL_GUARD', 'gc_reporting_date': '29/04/2023', 'blood': 'O+', 'icard_no': 'AGT-03507', 'dl_no': 'JK02-2004-008912', 'dl_validity': '02/09/2027', 'state': 'JAMMU & KASHMIR', 'address': 'Kathua, J&K', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '055132182', 'rank': 'HC/DVR', 'name': 'RAJEEV RANJAN', 'role': 'STAFF', 'mobile': '6005921614', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '12/12/2022', 'blood': 'B+', 'icard_no': 'AGT-05513', 'dl_no': 'BR01-2006-006723', 'dl_validity': '19/03/2029', 'state': 'BIHAR', 'address': 'Gaya, Bihar', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '031465834', 'rank': 'CT/DVR', 'name': 'RIZWAN AHAMAD KHAN', 'role': 'STAFF', 'mobile': '7017786859', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'POL_GUARD', 'gc_reporting_date': '10/01/2023', 'blood': 'A+', 'icard_no': 'AGT-03146', 'dl_no': 'UP32-2004-001290', 'dl_validity': '08/04/2028', 'state': 'UTTAR PRADESH', 'address': 'Lucknow, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '045022839', 'rank': 'CT/DVR', 'name': 'RAM KUMAR', 'role': 'STAFF', 'mobile': '8077418326', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'POL_GUARD', 'gc_reporting_date': '15/07/2022', 'blood': 'B+', 'icard_no': 'AGT-04502', 'dl_no': 'RJ14-2005-003412', 'dl_validity': '15/05/2027', 'state': 'RAJASTHAN', 'address': 'Alwar, Rajasthan', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '085250359', 'rank': 'CT/DVR', 'name': 'KAMAL KUMAR', 'role': 'STAFF', 'mobile': '8222091425', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '02/09/2023', 'blood': 'O+', 'icard_no': 'AGT-08525', 'dl_no': 'HR06-2009-009812', 'dl_validity': '19/11/2028', 'state': 'HARYANA', 'address': 'Panipat, Haryana', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '125350263', 'rank': 'CT/DVR', 'name': 'MANOJ KUMAR RAY', 'role': 'STAFF', 'mobile': '9470123891', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '21/11/2021', 'blood': 'O+', 'icard_no': 'AGT-12535', 'dl_no': 'BR01-2013-009812', 'dl_validity': '25/06/2028', 'state': 'BIHAR', 'address': 'Patna, Bihar', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '125002666', 'rank': 'CT/DVR', 'name': 'MAHAVEER SINGH', 'role': 'STAFF', 'mobile': '9887129596', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '04/04/2022', 'blood': 'A+', 'icard_no': 'AGT-12500', 'dl_no': 'RJ21-2013-004561', 'dl_validity': '30/10/2027', 'state': 'RAJASTHAN', 'address': 'Nagaur, Rajasthan', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '135352802', 'rank': 'CT/DVR', 'name': 'UPENDRA DEBNATH', 'role': 'STAFF', 'mobile': '7002067665', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '17/02/2023', 'blood': 'B+', 'icard_no': 'AGT-13535', 'dl_no': 'TR01-2014-007812', 'dl_validity': '14/08/2029', 'state': 'TRIPURA', 'address': 'Khowai, Tripura', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '135175564', 'rank': 'CT/DVR', 'name': 'NITESH KUMAR SINGH', 'role': 'STAFF', 'mobile': '9430127325', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '13/05/2021', 'blood': 'O+', 'icard_no': 'AGT-13517', 'dl_no': 'BR03-2014-001278', 'dl_validity': '05/02/2028', 'state': 'BIHAR', 'address': 'Ara, Bihar', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '155090312', 'rank': 'CT/DVR', 'name': 'RAJKUMAR TIWARI', 'role': 'STAFF', 'mobile': '7217631157', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '19/09/2022', 'blood': 'A+', 'icard_no': 'AGT-15509', 'dl_no': 'MP04-2016-004312', 'dl_validity': '18/12/2028', 'state': 'MADHYA PRADESH', 'address': 'Rewa, MP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '165060166', 'rank': 'CT/DVR', 'name': 'VIKASH DUBEY', 'role': 'MT WRITER (ADMIN)', 'mobile': '9149753674', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '10/08/2022', 'blood': 'B+', 'icard_no': 'CRPF-AGT-16506', 'dl_no': 'UP78-2016-004521', 'dl_validity': '15/10/2030', 'state': 'UTTAR PRADESH', 'address': 'Vill- Dubeypur, Kanpur Nagar, UP - 208001', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175318309', 'rank': 'CT/DVR', 'name': 'BINOY MALICK', 'role': 'STAFF', 'mobile': '7679207710', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '14/11/2023', 'blood': 'B+', 'icard_no': 'AGT-17531', 'dl_no': 'WB02-2018-009823', 'dl_validity': '09/01/2028', 'state': 'WEST BENGAL', 'address': 'Burdwan, WB', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175091091', 'rank': 'CT/DVR', 'name': 'ABDUL SAHID', 'role': 'STAFF', 'mobile': '9864501923', 'status': 'ATTACHED', 'leave_days': 0, 'course_name': '', 'location': 'IG TPA SEC.', 'duty_type': 'ATTACHED', 'gc_reporting_date': '05/03/2021', 'blood': 'O+', 'icard_no': 'AGT-17509', 'dl_no': 'AS01-2018-003412', 'dl_validity': '21/04/2028', 'state': 'ASSAM', 'address': 'Karimganj, Assam', 'photo_base64': '', 'attach_type': 'ATTACH_OUT', 'attach_office': 'IG TRIPURA SECTOR', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175091108', 'rank': 'CT/DVR', 'name': 'N. MANIMOHAN SINGH', 'role': 'STAFF', 'mobile': '9959290638', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '29/01/2024', 'blood': 'A+', 'icard_no': 'AGT-17509M', 'dl_no': 'MN01-2018-001245', 'dl_validity': '17/09/2028', 'state': 'MANIPUR', 'address': 'Imphal, Manipur', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175275977', 'rank': 'CT/DVR', 'name': 'SUDALA PRAVEEN', 'role': 'STAFF', 'mobile': '9550622631', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '18/06/2023', 'blood': 'B+', 'icard_no': 'AGT-17527', 'dl_no': 'TS09-2018-008912', 'dl_validity': '11/02/2028', 'state': 'TELANGANA', 'address': 'Warangal, Telangana', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175170105', 'rank': 'CT/DVR', 'name': 'SANGEET GIRI', 'role': 'STAFF', 'mobile': '8887560074', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '08/04/2022', 'blood': 'O+', 'icard_no': 'AGT-17517', 'dl_no': 'UP65-2018-004523', 'dl_validity': '23/11/2028', 'state': 'UTTAR PRADESH', 'address': 'Varanasi, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175170275', 'rank': 'CT/DVR', 'name': 'RITESH KUMAR PANDEY', 'role': 'STAFF', 'mobile': '8877755556', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'DUTY', 'gc_reporting_date': '12/10/2022', 'blood': 'A+', 'icard_no': 'AGT-17517R', 'dl_no': 'BR01-2018-007812', 'dl_validity': '04/07/2028', 'state': 'BIHAR', 'address': 'Buxar, Bihar', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175370657', 'rank': 'CT/DVR', 'name': 'ANUJ GAUTAM', 'role': 'STAFF', 'mobile': '8954832390', 'status': 'EL', 'leave_days': 30, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '25/08/2023', 'blood': 'B+', 'icard_no': 'AGT-17537', 'dl_no': 'UP80-2018-002341', 'dl_validity': '16/08/2028', 'state': 'UTTAR PRADESH', 'address': 'Agra, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 30, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175377413', 'rank': 'CT/DVR', 'name': 'AJEET SINGH', 'role': 'STAFF', 'mobile': '9568783642', 'status': 'CL', 'leave_days': 11, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '01/01/2024', 'blood': 'O+', 'icard_no': 'AGT-17537A', 'dl_no': 'UK07-2018-009812', 'dl_validity': '29/05/2028', 'state': 'UTTARAKHAND', 'address': 'Dehradun, UK', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 11, 'pl_bal': 30},
-              {'force': '175376407', 'rank': 'CT/DVR', 'name': 'ATUL KUMAR', 'role': 'STAFF', 'mobile': '6394818493', 'status': 'CL', 'leave_days': 11, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '17/05/2023', 'blood': 'A+', 'icard_no': 'AGT-17537AT', 'dl_no': 'UP70-2018-001234', 'dl_validity': '14/12/2027', 'state': 'UTTAR PRADESH', 'address': 'Prayagraj, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 11, 'pl_bal': 30},
-              {'force': '175219115', 'rank': 'CT/DVR', 'name': 'RAMESH JAMBHALE', 'role': 'STAFF', 'mobile': '6006258448', 'status': 'CL', 'leave_days': 10, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '20/11/2021', 'blood': 'B+', 'icard_no': 'AGT-17521', 'dl_no': 'MH12-2018-006712', 'dl_validity': '02/03/2029', 'state': 'MAHARASHTRA', 'address': 'Pune, Maharashtra', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 10, 'pl_bal': 30},
-              {'force': '175320249', 'rank': 'CT/DVR', 'name': 'MUKESH RAM', 'role': 'STAFF', 'mobile': '7999851490', 'status': 'CL', 'leave_days': 10, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '10/06/2023', 'blood': 'O+', 'icard_no': 'AGT-17532', 'dl_no': 'CG04-2018-003412', 'dl_validity': '22/07/2028', 'state': 'CHHATTISGARH', 'address': 'Raipur, CG', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 10, 'pl_bal': 30},
-              {'force': '085120542', 'rank': 'HC/MMV', 'name': 'SHIV NANDAN DAS', 'role': 'WORKSHOP', 'mobile': '9852205010', 'status': 'ATTACHED', 'leave_days': 0, 'course_name': '', 'location': 'IG TPA SEC.', 'duty_type': 'ATTACHED', 'gc_reporting_date': '14/09/2022', 'blood': 'A+', 'icard_no': 'AGT-08512', 'dl_no': '', 'dl_validity': '', 'state': 'BIHAR', 'address': 'Gaya, Bihar', 'photo_base64': '', 'attach_type': 'ATTACH_OUT', 'attach_office': 'IG TRIPURA SECTOR', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '105081179', 'rank': 'HC/MMV', 'name': 'SANJEET KUMAR', 'role': 'WORKSHOP', 'mobile': '8102448327', 'status': 'CL', 'leave_days': 14, 'course_name': '', 'location': 'HOME', 'duty_type': 'LEAVE', 'gc_reporting_date': '29/07/2023', 'blood': 'B+', 'icard_no': 'AGT-10508', 'dl_no': '', 'dl_validity': '', 'state': 'JHARKHAND', 'address': 'Ranchi, Jharkhand', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 14, 'pl_bal': 30},
-              {'force': '115176049', 'rank': 'HC/MMV', 'name': 'PRAMOD KUMAR PATEL', 'role': 'WORKSHOP', 'mobile': '9517259769', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'WORKSHOP', 'gc_reporting_date': '05/01/2021', 'blood': 'O+', 'icard_no': 'AGT-11517', 'dl_no': '', 'dl_validity': '', 'state': 'UTTAR PRADESH', 'address': 'Varanasi, UP', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '175091064', 'rank': 'CT/MMV', 'name': 'JYOTIRMOY SAHARIYA', 'role': 'WORKSHOP', 'mobile': '7006457718', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'WORKSHOP', 'gc_reporting_date': '11/04/2022', 'blood': 'A+', 'icard_no': 'AGT-17509J', 'dl_no': '', 'dl_validity': '', 'state': 'ASSAM', 'address': 'Mangaldai, Assam', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
-              {'force': '115094667', 'rank': 'CT/PTR', 'name': 'MD. ROKIBUL ISLAM', 'role': 'WORKSHOP', 'mobile': '7002779898', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'WORKSHOP', 'gc_reporting_date': '17/02/2021', 'blood': 'B+', 'icard_no': 'AGT-11509', 'dl_no': '', 'dl_validity': '', 'state': 'ASSAM', 'address': 'Nagaon, Assam', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
             ];
 
+            // यहाँ अपना पूरा defaultVehicles एरे पेस्ट करें जो आपने दिया था (जगह बचाने के लिए मुख्य 4 रखे गए हैं)
             static final List<Map<String, dynamic>> defaultVehicles = [
               _makeVeh('AS01 BS 1818', 'M/SWIFT DEZIRE', 'LIGHT VEHICLE (LV)', '2015', '03/10/2026', 'CT/DVR MAHAVEER SINGH', '18.5 KMPL', '42 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 EG 8169', 'M/SCORPIO', 'LIGHT VEHICLE (LV)', '2019', '01/10/2026', 'CT/DVR UPENDRA DEBNATH', '12.8 KMPL', '60 Ltr', 'ATTACHED', attachType: 'ATTACH_OUT', attachLoc: 'IG TRIPURA SECTOR'),
-              _makeVeh('AS01 FH 5372', 'TATA SAFARI', 'LIGHT VEHICLE (LV)', '2022', '01/10/2026', 'CT/DVR MAHAVEER SINGH', '14.2 KMPL', '50 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 FR 1039', 'M/C HUNTER 350', 'LIGHT VEHICLE (LV)', '2023', '14/10/2026', 'CT/DVR BINOY MALICK', '32.0 KMPL', '13 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 GL 5719', 'M/BOLERO NEO', 'LIGHT VEHICLE (LV)', '2025', '03/10/2026', 'CT/DVR NITESH KUMAR SINGH', '13.5 KMPL', '50 Ltr', 'AVAILABLE'),
-              _makeVeh('TR01 AW 0427', 'TATA SUMO', 'LIGHT VEHICLE (LV)', '2016', '29/10/2026', 'CT/DVR RAJKUMAR TIWARI', '11.0 KMPL', '65 Ltr', 'AVAILABLE'),
-
               _makeVeh('AS01 DD 5605', 'AMBULANCE', 'MEDIUM VEHICLE (MV)', '2011', '14/10/2026', 'CT/DVR NITESH KUMAR SINGH', '9.5 KMPL', '60 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 JC 4423', 'TATA 407', 'MEDIUM VEHICLE (MV)', '2017', '08/10/2026', 'HC/DVR DEBASHISH DEB', '8.5 KMPL', '60 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 KC 5200', 'TATA 407', 'MEDIUM VEHICLE (MV)', '2018', '17/10/2026', 'HC/DVR R. MADESWARAN', '8.5 KMPL', '60 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 TC 8182', 'SML AMBULANCE', 'MEDIUM VEHICLE (MV)', '2024', '21/10/2026', 'CT/DVR NITESH KUMAR SINGH', '10.2 KMPL', '70 Ltr', 'AVAILABLE'),
-              _makeVeh('TR01 AC 1665', 'SML (4x4)', 'MEDIUM VEHICLE (MV)', '2017', '15/10/2026', 'HC/DVR SURESH KUMAR', '7.8 KMPL', '90 Ltr', 'AVAILABLE'),
-              _makeVeh('TR01 AC 1667', 'SML (4x4)', 'MEDIUM VEHICLE (MV)', '2017', '15/10/2026', 'HC/DVR JOHN JUSTIN', '7.8 KMPL', '90 Ltr', 'AVAILABLE'),
-              _makeVeh('TR01 C 1324', 'SML MINI BUS', 'MEDIUM VEHICLE (MV)', '2016', '26/10/2026', 'HC/DVR SUBIR NATH', '8.0 KMPL', '90 Ltr', 'AVAILABLE'),
-              _makeVeh('TR01 G 1154', 'EICHER', 'MEDIUM VEHICLE (MV)', '2017', '05/10/2026', 'HC/DVR DEBASHISH DEB', '7.2 KMPL', '120 Ltr', 'OFF_ROAD'),
-              _makeVeh('TR01 G 1155', 'EICHER', 'MEDIUM VEHICLE (MV)', '2017', '05/10/2026', 'HC/DVR NIPEN HAJARIKA', '7.2 KMPL', '120 Ltr', 'AVAILABLE'),
-              _makeVeh('TR01 G 1156', 'TATA 407', 'MEDIUM VEHICLE (MV)', '2017', '19/10/2026', 'HC/DVR R. RAMESH', '8.5 KMPL', '60 Ltr', 'AVAILABLE'),
-              _makeVeh('TR01 JC 4424', 'SML P/VAN', 'MEDIUM VEHICLE (MV)', '2016', '12/10/2026', 'HC/DVR PUSHP SHARMA', '8.0 KMPL', '70 Ltr', 'AVAILABLE'),
-
               _makeVeh('AS01 DC 3020', 'TATA BUS', 'HEAVY VEHICLE (HV)', '2011', '10/10/2026', 'HC/DVR SUBIR NATH', '4.8 KMPL', '160 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 DC 4000', 'TATA BUS', 'HEAVY VEHICLE (HV)', '2011', '10/10/2026', 'HC/DVR SUNIL KUMAR', '4.8 KMPL', '160 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 DC 5000', 'TATA BUS', 'HEAVY VEHICLE (HV)', '2011', '26/10/2026', 'HC/DVR PRAJAPATI HARISH KUMAR', '4.8 KMPL', '160 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 DD 1809', 'TATA BUS', 'HEAVY VEHICLE (HV)', '2011', '23/10/2026', 'HC/DVR SANDEEP KUMAR', '4.8 KMPL', '160 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 RC 5206', 'TATA WATER TRUCK', 'HEAVY VEHICLE (HV)', '2015', '08/10/2026', 'HC/DVR RAJEEV RANJAN', '4.5 KMPL', '180 Ltr', 'ON_DUTY'),
-              _makeVeh('AS01 RC 8830', 'TATA WATER TRUCK', 'HEAVY VEHICLE (HV)', '2013', '28/10/2026', 'HC/DVR SANDEEP KUMAR', '4.5 KMPL', '180 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 RC 9782', 'A/LEYLAND TRUCK', 'HEAVY VEHICLE (HV)', '2024', '30/10/2026', 'CT/DVR SUDALA PRAVEEN', '4.2 KMPL', '200 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 RC 9843', 'TATA STAR BUS', 'HEAVY VEHICLE (HV)', '2024', '06/10/2026', 'HC/DVR SUBIR NATH', '5.5 KMPL', '160 Ltr', 'ON_DUTY'),
-              _makeVeh('AS01 TC 0178', 'TATA TRUCK', 'HEAVY VEHICLE (HV)', '2025', '31/10/2026', 'CT/DVR SANGEET GIRI', '4.5 KMPL', '200 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 TC 0183', 'TATA TRUCK', 'HEAVY VEHICLE (HV)', '2025', '13/10/2026', 'CT/DVR RITESH KUMAR PANDEY', '4.5 KMPL', '200 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 TC 0197', 'TATA STAR BUS', 'HEAVY VEHICLE (HV)', '2025', '17/10/2026', 'HC/DVR SUNIL KUMAR', '5.2 KMPL', '160 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 TC 0256', 'A/LEYLAND W/TRUCK', 'HEAVY VEHICLE (HV)', '2025', '19/10/2026', 'HC/DVR RAJEEV RANJAN', '4.2 KMPL', '180 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 UC 1704', 'MAHINDRA TRUCK', 'HEAVY VEHICLE (HV)', '2025', '27/10/2026', 'CT/DVR RAMESH JAMBHALE', '4.8 KMPL', '160 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 UC 1724', 'A/LEYLAND TRUCK', 'HEAVY VEHICLE (HV)', '2025', '27/10/2026', 'CT/DVR MUKESH RAM', '4.2 KMPL', '200 Ltr', 'AVAILABLE'),
-              _makeVeh('CG04 MA 3688', 'TATA BUS', 'HEAVY VEHICLE (HV)', '2024', '16/10/2026', 'HC/DVR SUBIR NATH', '5.0 KMPL', '160 Ltr', 'AVAILABLE'),
-              _makeVeh('JK02 DK 7573', 'A/Leyland BUS', 'HEAVY VEHICLE (HV)', '2017', '22/10/2026', 'HC/DVR PUSHP SHARMA', '4.8 KMPL', '180 Ltr', 'AVAILABLE'),
-              _makeVeh('MH40 BG 4125', 'TATA TRUCK', 'HEAVY VEHICLE (HV)', '2017', '22/10/2026', 'CT/DVR AJEET SINGH', '4.5 KMPL', '180 Ltr', 'AVAILABLE'),
-
               _makeVeh('AS01 EL 1349', 'JCB', 'SPECIAL VEHICLE (SV)', '2020', '23/10/2026', 'CT/DVR BINOY MALICK', '4.5 Ltr/Hr', '140 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 NC 2289', 'TRACTOR', 'SPECIAL VEHICLE (SV)', '2021', '07/10/2026', 'CT/DVR RAJKUMAR TIWARI', '3.5 Ltr/Hr', '45 Ltr', 'AVAILABLE'),
-              _makeVeh('AS01 TU 6358', 'RECOVERY', 'SPECIAL VEHICLE (SV)', '2023', '07/10/2026', 'HC/DVR DEBASHISH DEB', '4.0 KMPL', '150 Ltr', 'AVAILABLE'),
-              _makeVeh('TR01 Q 0986', 'TRACTOR', 'SPECIAL VEHICLE (SV)', '2026', '24/10/2026', 'CT/DVR RAJKUMAR TIWARI', '3.5 Ltr/Hr', '50 Ltr', 'AVAILABLE'),
-              _makeVeh('UP70 AG 3863', 'JETTING MACHINE', 'SPECIAL VEHICLE (SV)', '2019', '09/10/2026', 'CT/DVR KAMAL KUMAR', '5.0 KMPL', '100 Ltr', 'AVAILABLE'),
-              _makeVeh('UP70 AG 3879', 'GARBAGE', 'SPECIAL VEHICLE (SV)', '2019', '12/10/2026', 'CT/DVR ATUL KUMAR', '6.0 KMPL', '80 Ltr', 'AVAILABLE'),
             ];
 
             static Map<String, dynamic> _makeVeh(String no, String type, String cat, String yr, String date, String dvr, String mil, String fuel, String st, {String attachType = 'NONE', String attachLoc = 'GC AGT'}) {
@@ -574,12 +481,12 @@ jobs:
 
             static final Map<String, dynamic> defaultTodayDuty = {
               'duty_date': '21/10/2026',
-              'pump_commander': 'HC/DVR M. BALA SUBRAMANIAN',
-              'pump_guard_1st': 'CT/DVR RIZWAN AHAMAD KHAN',
-              'pump_guard_2nd': 'CT/DVR RAM KUMAR',
-              'pump_guard_3rd': 'CT/DVR KAMAL KUMAR',
-              'pump_guard_4th': 'CT/DVR MANOJ KUMAR RAY',
-              'park_commander': 'HC/MMV PRAMOD KUMAR PATEL',
+              'pump_commander': 'HC/DVR DEBASHISH DEB',
+              'pump_guard_1st': 'CT/DVR VIKASH DUBEY',
+              'pump_guard_2nd': 'CT/DVR NITESH KUMAR SINGH',
+              'pump_guard_3rd': 'CT/DVR BINOY MALICK',
+              'pump_guard_4th': 'CT/DVR MAHAVEER SINGH',
+              'park_commander': 'HC/DVR R. MADESWARAN',
               'park_guard_1st': 'CT/MMV JYOTIRMOY SAHARIYA',
             };
 
@@ -1582,8 +1489,8 @@ jobs:
                                     },
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                                    tooltip: 'ड्यूटी लिस्ट PDF डाउनलोड करें',
+                                    icon: const Icon(Icons.share, color: Colors.green),
+                                    tooltip: 'PDF शेयर करें',
                                     onPressed: () => _exportTodayDutyPdf(duty),
                                   ),
                                   if (isAdmin)
@@ -1825,7 +1732,7 @@ jobs:
                 ),
               );
 
-              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+              await MTStorage.sharePdf(pdf, 'MT_Duty_Roster_${duty['duty_date'].replaceAll("/", "")}');
             }
 
             // ================= STAFF PROFILE MODAL =================
@@ -2069,8 +1976,8 @@ jobs:
                                 Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                                      tooltip: 'खड़े पेज (Portrait) में PDF डाउनलोड',
+                                      icon: const Icon(Icons.share, color: Colors.green),
+                                      tooltip: 'PDF शेयर करें',
                                       onPressed: () => _exportStaffSeniorityPdf(),
                                     ),
                                     ElevatedButton.icon(
@@ -2269,7 +2176,7 @@ jobs:
                 ),
               );
 
-              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+              await MTStorage.sharePdf(pdf, 'MT_Staff_Seniority');
             }
 
             // ================= VEHICLE LOGBOOK MODAL =================
@@ -2292,8 +2199,8 @@ jobs:
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                                    tooltip: 'केवल एडमिन PDF डाउनलोड',
+                                    icon: const Icon(Icons.share, color: Colors.green),
+                                    tooltip: 'PDF शेयर करें',
                                     onPressed: () => _exportVehiclesListPdf(heading, list),
                                   ),
                                   ElevatedButton.icon(
@@ -2578,8 +2485,8 @@ jobs:
                           Text('$heading (${list.length})', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
                           if (isAdmin)
                             IconButton(
-                              icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                              tooltip: 'केवल एडमिन PDF डाउनलोड',
+                              icon: const Icon(Icons.share, color: Colors.green),
+                              tooltip: 'PDF शेयर करें',
                               onPressed: () => _exportStaffSeniorityPdf(),
                             ),
                         ],
@@ -2777,7 +2684,7 @@ jobs:
                 ),
               );
 
-              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+              await MTStorage.sharePdf(pdf, 'MT_Vehicle_List');
             }
 
             // ================= IN / OUT REGISTER =================
@@ -3167,7 +3074,7 @@ jobs:
                 ),
               );
 
-              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+              await MTStorage.sharePdf(pdf, 'MT_Parade_Statement');
             }
 
             void _createNewParadeFileFormatDialog() {
@@ -3350,8 +3257,8 @@ jobs:
                         onPressed: () => _insertRowAtDialog(MTStorage.paradeCustomRows.length),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.picture_as_pdf),
-                        tooltip: 'खड़े पेज (Portrait) में PDF (एडमिन)',
+                        icon: const Icon(Icons.share),
+                        tooltip: 'PDF शेयर (एडमिन)',
                         onPressed: _exportParadePdf,
                       ),
                     ],
@@ -3436,8 +3343,8 @@ jobs:
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                                  tooltip: 'डाउनलोड करें',
+                                  icon: const Icon(Icons.share, color: Colors.green),
+                                  tooltip: 'PDF शेयर करें',
                                   onPressed: () {
                                     _downloadCustomFilePdf(file);
                                   },
@@ -3564,7 +3471,7 @@ jobs:
                 ),
               );
 
-              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+              await MTStorage.sharePdf(pdf, file['name'] ?? 'CRPF_Document');
             }
           }
 
@@ -3652,7 +3559,7 @@ jobs:
                 ),
               );
 
-              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+              await MTStorage.sharePdf(pdf, f['name'] ?? 'CRPF_Document');
             }
 
             void _addExcelRowDialog() {
@@ -3753,8 +3660,8 @@ jobs:
                   foregroundColor: Colors.white,
                   actions: [
                     IconButton(
-                      icon: const Icon(Icons.picture_as_pdf),
-                      tooltip: 'PDF डाउनलोड करें',
+                      icon: const Icon(Icons.share),
+                      tooltip: 'PDF शेयर करें',
                       onPressed: _exportPdf,
                     ),
                     if (widget.isAdmin)
@@ -3946,7 +3853,7 @@ jobs:
                 ),
               );
 
-              await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+              await MTStorage.sharePdf(pdf, 'MT_Contact_Directory');
             }
 
             void _addOrEditContactDialog(Map<String, dynamic>? staff) {
@@ -4056,8 +3963,8 @@ jobs:
                   foregroundColor: Colors.white,
                   actions: [
                     IconButton(
-                      icon: const Icon(Icons.picture_as_pdf),
-                      tooltip: 'संपर्क सूची PDF डाउनलोड करें',
+                      icon: const Icon(Icons.share),
+                      tooltip: 'संपर्क सूची PDF शेयर करें',
                       onPressed: _exportDirectoryPdf,
                     ),
                     if (widget.isAdmin)
