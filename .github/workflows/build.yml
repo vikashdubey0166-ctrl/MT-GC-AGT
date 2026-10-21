@@ -1,4 +1,4 @@
-name: Build MT GC AGT APK
+Name: Build MT GC AGT APK
 
 on:
   push:
@@ -94,15 +94,19 @@ jobs:
             static String activeAdminForce = '165060166';
             static int cloudLastUpdated = 0;
 
-            // क्लाउड सिंक एंडपॉइंट (KV Store REST Sync)
-            static const String cloudSyncUrl = 'https://api.jsonbin.io/v3/b/67160000ad19ca34f8a11111'; // Mock/Direct Fallback Sync
+            // रियल-टाइम मल्टी-डिवाइस क्लाउड डेटा सिंक एंडपॉइंट (Cloud KV Endpoint)
+            static const String cloudStorageEndpoint = 'https://api.kvbase.io/collections/crpf_mt_gc_agt/records/master_sync';
             static Timer? _syncTimer;
             static final StreamController<bool> dataUpdateStream = StreamController<bool>.broadcast();
+            static final StreamController<String> liveAlertStream = StreamController<String>.broadcast();
+            static bool isSyncing = false;
 
             static Future<void> init() async {
               prefs = await SharedPreferences.getInstance();
               loadLocalData();
               startCloudSyncListener();
+              // पहली बार तुरंत क्लाउड से फेच करें
+              fetchCloudSync();
             }
 
             static void loadLocalData() {
@@ -192,7 +196,7 @@ jobs:
                       {
                         'id': 'notif_1',
                         'title': 'सिस्टम ऑटो-सिंक सक्रिय',
-                        'message': 'सभी 40 वाहनों, कार्मिक मोबाइल डायरेक्टरी व इंटरएक्टिव वर्ड/एक्सेल एडिटर की लाइव सिंक सुविधा सक्रिय है।',
+                        'message': 'सभी 40 वाहनों, कार्मिक मोबाइल डायरेक्टरी व लाइव सिंक सुविधा सक्रिय है।',
                         'time': DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now()),
                       }
                     ];
@@ -200,37 +204,58 @@ jobs:
               cloudLastUpdated = prefs.getInt('crpf_cloud_ts_v15') ?? 0;
             }
 
+            // 4 सेकंड में ऑटोमैटिक रियल-टाइम क्लाउड लिसनर
             static void startCloudSyncListener() {
               _syncTimer?.cancel();
-              _syncTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+              _syncTimer = Timer.periodic(const Duration(seconds: 4), (timer) async {
                 await fetchCloudSync();
               });
             }
 
             static Future<void> fetchCloudSync() async {
+              if (isSyncing) return;
+              isSyncing = true;
               try {
-                // क्लाउड से डेटा रिफ्रेश (यदि नया टाइमस्टैम्प प्राप्त हो)
-                final remoteSyncKey = prefs.getString('crpf_remote_sync_broadcast');
-                if (remoteSyncKey != null && remoteSyncKey.isNotEmpty) {
-                  final data = jsonDecode(remoteSyncKey);
+                final response = await http.get(
+                  Uri.parse(cloudStorageEndpoint),
+                  headers: {'Accept': 'application/json'},
+                ).timeout(const Duration(seconds: 4));
+
+                if (response.statusCode == 200 && response.body.isNotEmpty) {
+                  final data = jsonDecode(response.body);
                   int remoteTs = data['ts'] ?? 0;
                   if (remoteTs > cloudLastUpdated) {
                     cloudLastUpdated = remoteTs;
+                    final oldAdmin = activeAdminForce;
                     activeAdminForce = data['admin'] ?? activeAdminForce;
+                    
                     if (data['staff'] != null) staffList = List<Map<String, dynamic>>.from(data['staff']);
                     if (data['veh'] != null) vehicles = List<Map<String, dynamic>>.from(data['veh']);
                     if (data['duties'] != null) dateWiseDuties = Map<String, dynamic>.from(data['duties']);
                     if (data['logs'] != null) inOutLogs = List<Map<String, dynamic>>.from(data['logs']);
                     if (data['files'] != null) customParadeFiles = List<Map<String, dynamic>>.from(data['files']);
                     if (data['notifs'] != null) notifications = List<Map<String, dynamic>>.from(data['notifs']);
+                    if (data['passwords'] != null) passwords = Map<String, String>.from(data['passwords']);
 
                     sortStaffByCategoryAndSeniority();
                     sortVehiclesByCategory();
                     await saveLocalData();
+                    await prefs.setInt('crpf_cloud_ts_v15', cloudLastUpdated);
+
+                    // लाइव ब्रॉडकास्ट अलर्ट
+                    String alertMsg = data['last_change_desc'] ?? 'एडमिन द्वारा नया बदलाव किया गया है!';
+                    if (oldAdmin != activeAdminForce) {
+                      alertMsg = 'एडमिन अधिकार अब फोर्स सं: $activeAdminForce को सौंप दिए गए हैं!';
+                    }
+                    liveAlertStream.add(alertMsg);
                     dataUpdateStream.add(true);
                   }
                 }
-              } catch (_) {}
+              } catch (_) {
+                // ऑफ़लाइन होने पर लोकल डेटा सुरक्षित रहेगा
+              } finally {
+                isSyncing = false;
+              }
             }
 
             static Future<void> setLoggedInUser(String forceNo) async {
@@ -260,30 +285,39 @@ jobs:
                 'message': message,
                 'time': DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now()),
               });
-              await saveData();
+              await saveData(changeDesc: '$title: $message');
             }
 
-            static Future<void> saveData() async {
+            static Future<void> saveData({String changeDesc = 'डेटाबेस अपडेट हुआ'}) async {
               sortStaffByCategoryAndSeniority();
               sortVehiclesByCategory();
               cloudLastUpdated = DateTime.now().millisecondsSinceEpoch;
 
               await saveLocalData();
-
-              // मल्टी-डिवाइस ब्रॉडकास्ट पेलोड
-              final broadcastPayload = jsonEncode({
-                'ts': cloudLastUpdated,
-                'admin': activeAdminForce,
-                'staff': staffList,
-                'veh': vehicles,
-                'duties': dateWiseDuties,
-                'logs': inOutLogs,
-                'files': customParadeFiles,
-                'notifs': notifications,
-              });
-              await prefs.setString('crpf_remote_sync_broadcast', broadcastPayload);
               await prefs.setInt('crpf_cloud_ts_v15', cloudLastUpdated);
               dataUpdateStream.add(true);
+
+              // क्लाउड रेस्ट एपीआई पर तुरंत पुश करें
+              try {
+                final payload = jsonEncode({
+                  'ts': cloudLastUpdated,
+                  'admin': activeAdminForce,
+                  'last_change_desc': changeDesc,
+                  'staff': staffList,
+                  'veh': vehicles,
+                  'duties': dateWiseDuties,
+                  'logs': inOutLogs,
+                  'files': customParadeFiles,
+                  'notifs': notifications,
+                  'passwords': passwords,
+                });
+
+                await http.put(
+                  Uri.parse(cloudStorageEndpoint),
+                  headers: {'Content-Type': 'application/json'},
+                  body: payload,
+                ).timeout(const Duration(seconds: 4));
+              } catch (_) {}
             }
 
             static Future<void> saveLocalData() async {
@@ -371,7 +405,7 @@ jobs:
               'SI\nMM', 'ASI\nMM', 'HC\nMMV', 'CT\nMMV', 'CT\nDTR', 'TOTAL', 'G/TOT'
             ];
 
-            // 1 MTO + 48 कार्मिक (एक्सेल शीट Mt Gc Agt.xlsx से)
+            // 1 MTO + 48 कार्मिक
             static final List<Map<String, dynamic>> defaultStaff = [
               {
                 'force': '890123456', 'rank': 'MTO', 'name': 'RANJEET KUMAR SINGH', 'role': 'MTO',
@@ -452,7 +486,7 @@ jobs:
               {'force': '115094667', 'rank': 'CT/PTR', 'name': 'MD. ROKIBUL ISLAM', 'role': 'WORKSHOP', 'mobile': '7002779898', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'WORKSHOP', 'gc_reporting_date': '17/02/2021', 'blood': 'B+', 'icard_no': 'AGT-11509', 'dl_no': '', 'dl_validity': '', 'state': 'ASSAM', 'address': 'Nagaon, Assam', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
             ];
 
-            // 40 अधिकृत वाहन (DOC-20260930-WA0011.pdf)
+            // 40 अधिकृत वाहन
             static final List<Map<String, dynamic>> defaultVehicles = [
               _makeVeh('AS01 BS 1818', 'M/SWIFT DEZIRE', 'LIGHT VEHICLE (LV)', '2015', '03/10/2026', 'CT/DVR MAHAVEER SINGH', '18.5 KMPL', '42 Ltr', 'AVAILABLE'),
               _makeVeh('AS01 EG 8169', 'M/SCORPIO', 'LIGHT VEHICLE (LV)', '2019', '01/10/2026', 'CT/DVR UPENDRA DEBNATH', '12.8 KMPL', '60 Ltr', 'ATTACHED', attachType: 'ATTACH_OUT', attachLoc: 'IG TRIPURA SECTOR'),
@@ -784,7 +818,7 @@ jobs:
                             return;
                           }
                           MTStorage.passwords[staff['force']] = newPassCtrl.text.trim();
-                          await MTStorage.saveData();
+                          await MTStorage.saveData(changeDesc: 'पासवर्ड अपडेट किया गया: ${staff['force']}');
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('पासवर्ड सफलतापूर्वक बदल गया है! नए पासवर्ड से लॉगिन करें।'), backgroundColor: Colors.green));
                         },
@@ -882,6 +916,7 @@ jobs:
 
           class _DashboardScreenState extends State<DashboardScreen> {
             late StreamSubscription _sub;
+            late StreamSubscription _alertSub;
 
             @override
             void initState() {
@@ -889,12 +924,96 @@ jobs:
               _sub = MTStorage.dataUpdateStream.stream.listen((_) {
                 if (mounted) setState(() {});
               });
+
+              // लाइव ब्रॉडकास्ट नोटिफिकेशन अलर्ट लिसनर
+              _alertSub = MTStorage.liveAlertStream.stream.listen((msg) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          const Icon(Icons.notifications_active, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(msg, style: const TextStyle(fontWeight: FontWeight.bold))),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFF1B3B6F),
+                      duration: const Duration(seconds: 4),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              });
             }
 
             @override
             void dispose() {
               _sub.cancel();
+              _alertSub.cancel();
               super.dispose();
+            }
+
+            // एडमिन व्हाट्सएप कनेक्ट डायलॉग
+            void _showAdminWhatsAppConnectDialog() {
+              String selectedForce = MTStorage.staffList.first['force'];
+              final msgCtrl = TextEditingController(text: 'जय हिन्द। एम टी शाखा समूह केंद्र अगरतला से आवश्यक सूचना: ');
+
+              showDialog(
+                context: context,
+                builder: (ctx) => StatefulBuilder(
+                  builder: (ctx, setD) => AlertDialog(
+                    title: const Row(
+                      children: [
+                        Icon(Icons.chat, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text('एडमिन WhatsApp कनेक्ट', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('कार्मिक का चयन करें और सीधे आधिकारिक संदेश/ड्यूटी विवरण व्हाट्सएप पर भेजें:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                          const SizedBox(height: 10),
+                          DropdownButtonFormField<String>(
+                            value: selectedForce,
+                            isExpanded: true,
+                            decoration: const InputDecoration(labelText: 'कार्मिक चुनें', border: OutlineInputBorder()),
+                            items: MTStorage.staffList.map((s) {
+                              return DropdownMenuItem(value: s['force'] as String, child: Text('${s['rank']} ${s['name']} (${s['mobile']})', style: const TextStyle(fontSize: 12)));
+                            }).toList(),
+                            onChanged: (val) => setD(() => selectedForce = val!),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: msgCtrl,
+                            maxLines: 3,
+                            decoration: const InputDecoration(labelText: 'संदेश (Message)', border: OutlineInputBorder()),
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('रद्द करें')),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                        icon: const Icon(Icons.send, size: 16),
+                        label: const Text('WhatsApp पर भेजें'),
+                        onPressed: () async {
+                          final targetStaff = MTStorage.staffList.firstWhere((s) => s['force'] == selectedForce);
+                          final enc = Uri.encodeComponent(msgCtrl.text.trim());
+                          final uri = Uri.parse('https://wa.me/91${targetStaff['mobile']}?text=$enc');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
             }
 
             void _showSelfChangePasswordDialog() {
@@ -935,7 +1054,7 @@ jobs:
                             return;
                           }
                           MTStorage.passwords[widget.currentUser['force']] = newPassCtrl.text.trim();
-                          await MTStorage.saveData();
+                          await MTStorage.saveData(changeDesc: 'पासवर्ड अपडेट किया गया: ${widget.currentUser['name']}');
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('पासवर्ड सफलतापूर्वक अपडेट हो गया!'), backgroundColor: Colors.green));
                         },
@@ -981,7 +1100,7 @@ jobs:
                         onPressed: () async {
                           if (newPassCtrl.text.trim().isNotEmpty) {
                             MTStorage.passwords[selectedForce] = newPassCtrl.text.trim();
-                            await MTStorage.saveData();
+                            await MTStorage.saveData(changeDesc: 'एडमिन द्वारा फोर्स सं: $selectedForce का पासवर्ड बदला गया');
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('फोर्स सं: $selectedForce का पासवर्ड अपडेट हो गया!'), backgroundColor: Colors.green));
                           }
@@ -994,6 +1113,7 @@ jobs:
               );
             }
 
+            // एडमिन अधिकार स्थानांतरण
             void _showDelegateAdminDialog() {
               String selectedForce = MTStorage.staffList[0]['force'];
 
@@ -1012,7 +1132,7 @@ jobs:
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('अवकाश पर जाने पर एडमिन अधिकार किसी अन्य कार्मिक को सौंपें। यह अन्य डिवाइस पर भी तुरंत सक्रिय हो जाएगा:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                        const Text('अवकाश पर जाने या कार्यभार सौंपने पर एडमिन अधिकार किसी अन्य कार्मिक को सौंपें। यह अन्य डिवाइस पर भी तुरंत सक्रिय हो जाएगा:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           value: selectedForce,
@@ -1032,7 +1152,6 @@ jobs:
                         onPressed: () async {
                           MTStorage.activeAdminForce = selectedForce;
                           await MTStorage.addNotification('एडमिन आईडी स्थानांतरित', 'कार्यवाहक एडमिन अधिकार फोर्स सं: $selectedForce को सौंप दिए गए हैं।');
-                          await MTStorage.saveData();
                           Navigator.pop(ctx);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('एडमिन अधिकार फोर्स सं: $selectedForce को सफलतापूर्वक स्थानांतरित कर दिया गया!'), backgroundColor: Colors.green),
@@ -1087,7 +1206,7 @@ jobs:
             }
 
             void _showSmartUploadDialog(bool isAdmin) {
-              String targetSection = 'VEHICLE';
+              String targetSection = 'PARADE';
               String selectedTargetKey = MTStorage.vehicles.first['no'];
 
               showDialog(
@@ -1098,7 +1217,7 @@ jobs:
                       children: [
                         Icon(Icons.add_a_photo, color: Color(0xFF1B3B6F)),
                         SizedBox(width: 8),
-                        Text('फोटो/दस्तावेज स्वतः जोड़ें', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text('फोटो / सीआरपीएफ फॉर्म स्वतः जोड़ें', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     content: SingleChildScrollView(
@@ -1106,15 +1225,15 @@ jobs:
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('कैमरा या गैलरी से फोटो अपलोड करें, यह स्वतः संबंधित ऑप्शन में जुड़कर नया बदलाव दिखाने लगेगा:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                          const Text('कैमरा या गैलरी से फोटो या सीआरपीएफ फॉर्म अपलोड करें, यह तुरंत क्लाउड सिंक होकर सभी कार्मिकों के डिवाइस में दिखने लगेगा:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<String>(
                             value: targetSection,
                             decoration: const InputDecoration(labelText: 'किस ऑप्शन में जोड़ना है?'),
                             items: const [
+                              DropdownMenuItem(value: 'PARADE', child: Text('परेड स्टेटमेंट (CRPF आधिकारिक फॉर्म व फाइलें)')),
                               DropdownMenuItem(value: 'VEHICLE', child: Text('वाहन लॉगबुक (Vehicle Details)')),
                               DropdownMenuItem(value: 'STAFF', child: Text('कार्मिक प्रोफाइल (Staff Details)')),
-                              DropdownMenuItem(value: 'PARADE', child: Text('परेड स्टेटमेंट (Parade Files)')),
                             ],
                             onChanged: (val) {
                               setD(() {
@@ -1156,7 +1275,7 @@ jobs:
                               ),
                               OutlinedButton.icon(
                                 icon: const Icon(Icons.photo_library, size: 16),
-                                label: const Text('गैलरी'),
+                                label: const Text('गैलरी / दस्तावेज'),
                                 onPressed: () => _pickAndAssignMedia(ImageSource.gallery, targetSection, selectedTargetKey, dCtx),
                               ),
                             ],
@@ -1180,7 +1299,7 @@ jobs:
                   final staff = MTStorage.staffList.firstWhere((s) => s['force'] == targetKey, orElse: () => {});
                   if (staff.isNotEmpty) {
                     staff['photo_base64'] = b64;
-                    await MTStorage.addNotification('कार्मिक फोटो अपडेट', '${staff['rank']} ${staff['name']} का फोटो सफलतापूर्वक अपडेट किया गया।');
+                    await MTStorage.addNotification('कार्मिक फोटो अपडेट', '${staff['rank']} ${staff['name']} का फोटो अपडेट किया गया।');
                   }
                 } else if (section == 'VEHICLE') {
                   final veh = MTStorage.vehicles.firstWhere((v) => v['no'] == targetKey, orElse: () => {});
@@ -1192,22 +1311,21 @@ jobs:
                 } else if (section == 'PARADE') {
                   MTStorage.customParadeFiles.add({
                     'id': 'file_${DateTime.now().millisecondsSinceEpoch}',
-                    'name': 'PARADE_DOC_${DateFormat('ddMM_HHmm').format(DateTime.now())}',
-                    'type': 'EXCEL',
+                    'name': 'CRPF_FORM_${DateFormat('ddMM_HHmm').format(DateTime.now())}',
+                    'type': 'FORM',
                     'created_date': DateFormat('dd/MM/yyyy').format(DateTime.now()),
-                    'description': 'कैमरा/दस्तावेज से स्वतः अपलोड की गई परेड फाइल',
-                    'headers': ['SL', 'ITEM', 'STATUS'],
-                    'rows': [['1', 'INSPECTION REPORT', 'PASSED']],
-                    'word_content': '',
+                    'description': 'आधिकारिक सीआरपीएफ फॉर्म/दस्तावेज (सभी कार्मिकों हेतु उपलब्ध)',
+                    'headers': ['SL', 'CRPF DOCUMENT DETAILS', 'STATUS'],
+                    'rows': [['1', 'CRPF OFFICIAL ATTACHMENT', 'VERIFIED & ISSUED']],
+                    'word_content': 'कार्यालय पुलिस उप महानिरीक्षक, समूह केंद्र, के.रि.पु.बल अगरतला। आधिकारिक दस्तावेज संलग्न है।',
                     'photo_base64': b64
                   });
-                  await MTStorage.addNotification('परेड फाइल जोड़ी गई', 'परेड स्टेटमेंट में नई फाइल स्वतः अपलोड होकर लिंक हुई।');
+                  await MTStorage.addNotification('सीआरपीएफ फॉर्म अपलोड', 'परेड सेक्शन में नया सीआरपीएफ फॉर्म अपलोड किया गया है।');
                 }
 
-                await MTStorage.saveData();
                 Navigator.pop(dCtx);
                 setState(() {});
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('फाइल स्वतः संबंधित ऑप्शन में जुड़ गई व अपडेट हो गई!'), backgroundColor: Colors.green));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('फाइल सभी कार्मिकों के डिवाइस हेतु तुरंत सिंक हो गई!'), backgroundColor: Colors.green));
               }
             }
 
@@ -1234,6 +1352,12 @@ jobs:
                   backgroundColor: const Color(0xFF1B3B6F),
                   foregroundColor: Colors.white,
                   actions: [
+                    if (isAdmin)
+                      IconButton(
+                        icon: const Icon(Icons.chat, color: Colors.greenAccent),
+                        tooltip: 'WhatsApp कनेक्ट',
+                        onPressed: _showAdminWhatsAppConnectDialog,
+                      ),
                     IconButton(
                       icon: const Icon(Icons.notifications),
                       tooltip: 'सूचनाएं',
@@ -1330,11 +1454,11 @@ jobs:
                               () => _openTodayDutyScreen(isAdmin)),
                           _menuBtn(Icons.contacts, 'कार्मिक मोबाइल डायरेक्टरी', Colors.blue, 'फोर्स नं., रैंक, नाम, मोबाइल सूची व PDF',
                               () => Navigator.push(context, MaterialPageRoute(builder: (_) => ContactDirectoryScreen(isAdmin: isAdmin)))),
-                          _menuBtn(Icons.camera_alt, 'फोटो/डॉक्युमेंट अपलोड', Colors.blueGrey, 'कैमरा/गैलरी से स्वतः ऑप्शन में जोड़ें',
+                          _menuBtn(Icons.camera_alt, 'फोटो / सीआरपीएफ फॉर्म अपलोड', Colors.blueGrey, 'कैमरा/दस्तावेज से स्वतः सभी डिवाइस में सिंक',
                               () => _showSmartUploadDialog(isAdmin)),
                           _menuBtn(Icons.badge, 'सीनियरिटी लिस्ट', Colors.indigo, 'MTO, SO\'S, HC/DVR, CT/DVR, MMV, PTR क्रम',
                               () => _openSeniorityList(isAdmin)),
-                          _menuBtn(Icons.table_chart, 'परेड स्टेटमेंट व फाइलें', Colors.deepPurple, 'अलग-अलग Word/Excel फाइलें व डाउनलोड',
+                          _menuBtn(Icons.table_chart, 'परेड स्टेटमेंट व CRPF फॉर्म्स', Colors.deepPurple, 'CRPF आधिकारिक फॉर्म्स, Word व Excel',
                               () => Navigator.push(context, MaterialPageRoute(builder: (_) => OfficialParadeGridScreen(isAdmin: isAdmin)))),
                           _menuBtn(Icons.swap_horiz, 'अटैचमेंट प्रबंधन', Colors.brown, 'GC AGT से अन्य / अन्य से GC AGT',
                               () => _openAttachmentManagement(isAdmin)),
@@ -1407,7 +1531,7 @@ jobs:
               );
             }
 
-            // ================= TODAY DUTY (DATE-WISE STORE & SELECT) =================
+            // ================= TODAY DUTY =================
             void _openTodayDutyScreen(bool isAdmin) {
               String selectedDate = DateFormat('dd/MM/yyyy').format(DateTime.now());
               if (!MTStorage.dateWiseDuties.containsKey(selectedDate)) {
@@ -1455,7 +1579,7 @@ jobs:
                                         if (!MTStorage.dateWiseDuties.containsKey(newDt)) {
                                           MTStorage.dateWiseDuties[newDt] = Map<String, dynamic>.from(MTStorage.defaultTodayDuty);
                                           MTStorage.dateWiseDuties[newDt]['duty_date'] = newDt;
-                                          await MTStorage.saveData();
+                                          await MTStorage.saveData(changeDesc: 'ड्यूटी दिनांक $newDt तैयार की गई');
                                         }
                                         setDutyState(() => selectedDate = newDt);
                                       }
@@ -1608,8 +1732,7 @@ jobs:
                           duty['park_guard_1st'] = parkg1;
 
                           MTStorage.dateWiseDuties[dutyDate] = duty;
-                          await MTStorage.addNotification('ड्यूटी अपडेट ($dutyDate)', 'दिनांक $dutyDate की दैनिक ड्यूटी रोस्टर एडमिन द्वारा अपडेट की गई।');
-                          await MTStorage.saveData();
+                          await MTStorage.addNotification('ड्यूटी रोस्टर अपडेट', 'दिनांक $dutyDate की दैनिक ड्यूटी रोस्टर अपडेट हुई।');
                           Navigator.pop(dCtx);
                           onDone();
                         },
@@ -1741,7 +1864,7 @@ jobs:
                                       if (img != null) {
                                         final bytes = await img.readAsBytes();
                                         staff['photo_base64'] = base64Encode(bytes);
-                                        await MTStorage.saveData();
+                                        await MTStorage.saveData(changeDesc: 'फोटो अपडेट: ${staff['rank']} ${staff['name']}');
                                         setPState(() {});
                                         setState(() {});
                                       }
@@ -1783,10 +1906,10 @@ jobs:
                                     label: const Text('कार्मिक हटाएं'),
                                     onPressed: () async {
                                       MTStorage.staffList.remove(staff);
-                                      await MTStorage.saveData();
+                                      await MTStorage.saveData(changeDesc: 'कार्मिक हटाया गया: ${staff['name']}');
                                       Navigator.pop(ctx);
                                       setState(() {});
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('कार्मिक को सफलतापूर्वक हटा दिया गया!'), backgroundColor: Colors.red));
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('कार्मिक को हटा दिया गया!'), backgroundColor: Colors.red));
                                     },
                                   ),
                                 ),
@@ -1910,7 +2033,7 @@ jobs:
                           staff['address'] = addrCtrl.text.trim();
                           staff['state'] = stateCtrl.text.trim().toUpperCase();
 
-                          await MTStorage.saveData();
+                          await MTStorage.saveData(changeDesc: 'कार्मिक विवरण अपडेट: ${staff['rank']} ${staff['name']}');
                           Navigator.pop(dCtx);
                           setState(() {});
                         },
@@ -2082,7 +2205,7 @@ jobs:
                               'cl_bal': 15,
                               'pl_bal': 30
                             });
-                            await MTStorage.saveData();
+                            await MTStorage.saveData(changeDesc: 'नया कार्मिक जोड़ा गया: ${nameCtrl.text.trim()}');
                             Navigator.pop(dCtx);
                             onDone();
                           }
@@ -2276,7 +2399,7 @@ jobs:
                                     label: const Text('वाहन हटाएं'),
                                     onPressed: () async {
                                       MTStorage.vehicles.remove(v);
-                                      await MTStorage.saveData();
+                                      await MTStorage.saveData(changeDesc: 'वाहन हटाया गया: ${v['no']}');
                                       Navigator.pop(ctx);
                                       setState(() {});
                                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('वाहन सफलतापूर्वक हटा दिया गया!'), backgroundColor: Colors.red));
@@ -2423,7 +2546,7 @@ jobs:
                                 'attach_loc': 'GC AGT',
                               });
                             }
-                            await MTStorage.saveData();
+                            await MTStorage.saveData(changeDesc: 'वाहन लॉगबुक अपडेट: ${noCtrl.text.trim()}');
                             Navigator.pop(dCtx);
                             onDone();
                           }
@@ -2589,7 +2712,7 @@ jobs:
                             staff['status'] = 'PRESENT';
                             staff['location'] = 'GC AGT';
                           }
-                          await MTStorage.saveData();
+                          await MTStorage.saveData(changeDesc: 'अटैचमेंट अपडेट: ${staff['rank']} ${staff['name']}');
                           Navigator.pop(dCtx);
                           setState(() {});
                         },
@@ -2655,7 +2778,7 @@ jobs:
               await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
             }
 
-            // ================= IN / OUT REGISTER (DATE-WISE MOVEMENT) =================
+            // ================= IN / OUT REGISTER =================
             void _openInOut(bool isAdmin, Map<String, dynamic> user) {
               String selectedFilterDate = 'ALL';
 
@@ -2742,7 +2865,7 @@ jobs:
                                                       onPressed: () async {
                                                         l['status'] = 'IN';
                                                         l['in_time'] = DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now());
-                                                        await MTStorage.saveData();
+                                                        await MTStorage.saveData(changeDesc: 'वाहन IN दर्ज हुआ: ${l['vehicle']}');
                                                         setSState(() {});
                                                         setState(() {});
                                                       },
@@ -2813,7 +2936,7 @@ jobs:
                               'out_time': DateFormat('yyyy-MM-dd hh:mm a').format(DateTime.now()),
                               'in_time': '-'
                             });
-                            await MTStorage.saveData();
+                            await MTStorage.saveData(changeDesc: 'वाहन OUT दर्ज हुआ: $selVeh');
                             Navigator.pop(dCtx);
                             onAdded();
                           }
@@ -2884,7 +3007,7 @@ jobs:
                                                           staff['status'] = l['type'];
                                                           staff['leave_days'] = l['total_days'] ?? 15;
                                                         }
-                                                        await MTStorage.saveData();
+                                                        await MTStorage.saveData(changeDesc: 'अवकाश स्वीकृत: ${l['name']}');
                                                         setSState(() {});
                                                         setState(() {});
                                                       },
@@ -2894,7 +3017,7 @@ jobs:
                                                       tooltip: 'अस्वीकार करें',
                                                       onPressed: () async {
                                                         l['status'] = 'REJECTED';
-                                                        await MTStorage.saveData();
+                                                        await MTStorage.saveData(changeDesc: 'अवकाश अस्वीकृत: ${l['name']}');
                                                         setSState(() {});
                                                         setState(() {});
                                                       },
@@ -2956,7 +3079,7 @@ jobs:
                             'reason': rsnCtrl.text.trim(),
                             'status': 'PENDING'
                           });
-                          await MTStorage.saveData();
+                          await MTStorage.saveData(changeDesc: 'नया अवकाश आवेदन: ${user['rank']} ${user['name']}');
                           Navigator.pop(dCtx);
                           onDone();
                         },
@@ -3047,30 +3170,31 @@ jobs:
 
             void _createNewParadeFileFormatDialog() {
               String fileType = 'EXCEL';
-              final filenameCtrl = TextEditingController(text: 'MT_PARADE_CUSTOM_${DateFormat('ddMM').format(DateTime.now())}');
-              final descCtrl = TextEditingController(text: 'दैनिक परेड एवं वाहन रिपोर्ट');
+              final filenameCtrl = TextEditingController(text: 'CRPF_PARADE_FORM_${DateFormat('ddMM').format(DateTime.now())}');
+              final descCtrl = TextEditingController(text: 'दैनिक परेड एवं वाहन रिपोर्ट / सीआरपीएफ फॉर्म');
 
               showDialog(
                 context: context,
                 builder: (ctx) => StatefulBuilder(
                   builder: (ctx, setF) => AlertDialog(
-                    title: const Text('नई परेड फाइल बनाएं (एडमिन)'),
+                    title: const Text('नई परेड फाइल / सीआरपीएफ फॉर्म (एडमिन)'),
                     content: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('यह फाइल MS WORD या EXCEL जिसमें एडमिन चुनेंगे उसमें कार्य करेगी तथा सभी कार्मिकों को अलग से दिखेगी:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                        const Text('यह फाइल सभी कार्मिकों के डिवाइस में तुरंत लाइव सिंक होगी:', style: TextStyle(fontSize: 12, color: Colors.blueGrey)),
                         const SizedBox(height: 10),
                         DropdownButtonFormField<String>(
                           value: fileType,
-                          decoration: const InputDecoration(labelText: 'फाइल फॉर्मेट चुनें'),
+                          decoration: const InputDecoration(labelText: 'फॉर्मेट चुनें'),
                           items: const [
                             DropdownMenuItem(value: 'EXCEL', child: Text('MS EXCEL (.xlsx / .csv)')),
                             DropdownMenuItem(value: 'WORD', child: Text('MS WORD (.docx / .doc)')),
+                            DropdownMenuItem(value: 'FORM', child: Text('CRPF OFFICIAL FORM')),
                           ],
                           onChanged: (val) => setF(() => fileType = val!),
                         ),
-                        TextField(controller: filenameCtrl, decoration: const InputDecoration(labelText: 'फाइल का नाम')),
-                        TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'विवरण / टिप्पणी')),
+                        TextField(controller: filenameCtrl, decoration: const InputDecoration(labelText: 'फाइल / फॉर्म का नाम')),
+                        TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'विवरण / उद्देश्य')),
                       ],
                     ),
                     actions: [
@@ -3088,16 +3212,15 @@ jobs:
                               'rows': fileType == 'EXCEL' ? [['1', 'PARADE STR', '49']] : [],
                               'word_content': fileType == 'WORD' ? 'एम टी शाखा समूह केंद्र अगरतला - दैनिक आदेश पत्र' : '',
                             });
-                            await MTStorage.addNotification('नई परेड फाइल उपलब्ध', 'एडमिन द्वारा नई $fileType फाइल (${filenameCtrl.text}) जोड़ी गई।');
-                            await MTStorage.saveData();
+                            await MTStorage.addNotification('नया फॉर्म/फाइल जोड़ी गई', 'एडमिन द्वारा $fileType: ${filenameCtrl.text} जोड़ी गई।');
                             Navigator.pop(ctx);
                             setState(() {});
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('नई $fileType फाइल: ${filenameCtrl.text} तैयार हो गई!'), backgroundColor: Colors.green),
+                              SnackBar(content: Text('नई फाइल: ${filenameCtrl.text} सभी डिवाइस पर सिंक हो गई!'), backgroundColor: Colors.green),
                             );
                           }
                         },
-                        child: const Text('फाइल जोड़ें व सुरक्षित करें'),
+                        child: const Text('सुरक्षित करें'),
                       ),
                     ],
                   ),
@@ -3150,7 +3273,7 @@ jobs:
                             'vals': valCtrls.map((c) => c.text.trim()).toList(),
                             'isBold': false
                           });
-                          await MTStorage.saveData();
+                          await MTStorage.saveData(changeDesc: 'परेड रो जोड़ी गई: ${titleCtrl.text.trim()}');
                           Navigator.pop(dCtx);
                           setState(() {});
                         }
@@ -3179,7 +3302,7 @@ jobs:
                           for (var r in MTStorage.paradeCustomRows) {
                             (r['vals'] as List).add('00');
                           }
-                          await MTStorage.saveData();
+                          await MTStorage.saveData(changeDesc: 'परेड में नया कॉलम जोड़ा गया');
                           Navigator.pop(ctx);
                           setState(() {});
                         }
@@ -3197,21 +3320,21 @@ jobs:
 
               return Scaffold(
                 appBar: AppBar(
-                  title: const Text('MT PLATOON PARADE & FILES'),
+                  title: const Text('MT PLATOON PARADE & CRPF FORMS'),
                   backgroundColor: const Color(0xFF1B3B6F),
                   foregroundColor: Colors.white,
                   bottom: TabBar(
                     controller: _tabController,
                     tabs: const [
                       Tab(icon: Icon(Icons.table_chart), text: 'दैनिक परेड ग्रिड'),
-                      Tab(icon: Icon(Icons.folder_shared), text: 'निर्मित फाइलें (Word/Excel)'),
+                      Tab(icon: Icon(Icons.folder_shared), text: 'CRPF फॉर्म व फाइलें'),
                     ],
                   ),
                   actions: [
                     if (widget.isAdmin) ...[
                       IconButton(
                         icon: const Icon(Icons.note_add),
-                        tooltip: 'नई Word/Excel फाइल बनाएं',
+                        tooltip: 'नई फाइल/CRPF फॉर्म बनाएं',
                         onPressed: _createNewParadeFileFormatDialog,
                       ),
                       IconButton(
@@ -3281,13 +3404,14 @@ jobs:
                       ),
                     ),
 
-                    // Tab 2: Custom Word & Excel Files
+                    // Tab 2: CRPF Forms, Custom Word & Excel Files
                     ListView.builder(
                       padding: const EdgeInsets.all(12),
                       itemCount: MTStorage.customParadeFiles.length,
                       itemBuilder: (ctx, i) {
                         final file = MTStorage.customParadeFiles[i];
                         final bool isExcel = file['type'] == 'EXCEL';
+                        final bool isForm = file['type'] == 'FORM';
 
                         return Card(
                           child: ListTile(
@@ -3300,11 +3424,14 @@ jobs:
                               ).then((_) => setState(() {}));
                             },
                             leading: CircleAvatar(
-                              backgroundColor: isExcel ? Colors.green.shade100 : Colors.blue.shade100,
-                              child: Icon(isExcel ? Icons.table_view : Icons.description, color: isExcel ? Colors.green.shade800 : Colors.blue.shade800),
+                              backgroundColor: isForm ? Colors.deepOrange.shade100 : (isExcel ? Colors.green.shade100 : Colors.blue.shade100),
+                              child: Icon(
+                                isForm ? Icons.assignment_turned_in : (isExcel ? Icons.table_view : Icons.description),
+                                color: isForm ? Colors.deepOrange.shade800 : (isExcel ? Colors.green.shade800 : Colors.blue.shade800),
+                              ),
                             ),
                             title: Text(file['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('फॉर्मेट: ${file['type']} | निर्माण तिथि: ${file['created_date']}\nविवरण: ${file['description']}\n(टैप करके फाइल में कार्य करें)'),
+                            subtitle: Text('फॉर्मेट: ${file['type']} | निर्माण तिथि: ${file['created_date']}\nविवरण: ${file['description']}\n(टैप करके फाइल/फॉर्म देखें)'),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -3321,7 +3448,7 @@ jobs:
                                     tooltip: 'फाइल हटाएं',
                                     onPressed: () async {
                                       MTStorage.customParadeFiles.removeAt(i);
-                                      await MTStorage.saveData();
+                                      await MTStorage.saveData(changeDesc: 'फाइल हटाई गई: ${file['name']}');
                                       setState(() {});
                                     },
                                   ),
@@ -3386,7 +3513,7 @@ jobs:
                       title: const Text('यह पंक्ति हटाएं (Delete)'),
                       onTap: () async {
                         MTStorage.paradeCustomRows.removeAt(index);
-                        await MTStorage.saveData();
+                        await MTStorage.saveData(changeDesc: 'परेड पंक्ति डिलीट की गई');
                         Navigator.pop(ctx);
                         setState(() {});
                       },
@@ -3441,7 +3568,7 @@ jobs:
             }
           }
 
-          // ================= CUSTOM PARADE FILE EDITOR (WORD & EXCEL) =================
+          // ================= CUSTOM PARADE FILE EDITOR (WORD & EXCEL & FORMS) =================
           class CustomParadeFileEditorScreen extends StatefulWidget {
             final Map<String, dynamic> file;
             final bool isAdmin;
@@ -3469,10 +3596,9 @@ jobs:
               widget.file['word_content'] = _wordTextCtrl.text;
               widget.file['headers'] = _headers;
               widget.file['rows'] = _rows;
-              await MTStorage.saveData();
-              await MTStorage.addNotification('फाइल अपडेट', '${widget.file['name']} को एडमिन द्वारा अद्यतन (Save) किया गया।');
+              await MTStorage.saveData(changeDesc: 'फाइल अपडेट की गई: ${widget.file['name']}');
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('फाइल सफलता से सुरक्षित (Save) कर दी गई!'), backgroundColor: Colors.green));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('फाइल सभी कार्मिकों हेतु तुरंत लाइव अपडेट हो गई!'), backgroundColor: Colors.green));
               }
             }
 
@@ -3618,6 +3744,7 @@ jobs:
             Widget build(BuildContext context) {
               final f = widget.file;
               final bool isExcel = f['type'] == 'EXCEL';
+              final bool hasPhoto = f['photo_base64'] != null && f['photo_base64'].toString().isNotEmpty;
 
               return Scaffold(
                 appBar: AppBar(
@@ -3638,93 +3765,121 @@ jobs:
                       ),
                   ],
                 ),
-                body: isExcel
-                    ? Column(
-                        children: [
-                          if (widget.isAdmin)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              color: Colors.indigo.shade50,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
-                                    icon: const Icon(Icons.add_circle, size: 14),
-                                    label: const Text('नई पंक्ति (Row)'),
-                                    onPressed: _addExcelRowDialog,
-                                  ),
-                                  ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
-                                    icon: const Icon(Icons.view_column, size: 14),
-                                    label: const Text('नया कॉलम'),
-                                    onPressed: _addExcelColumnDialog,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.vertical,
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Table(
-                                  defaultColumnWidth: const FixedColumnWidth(90),
-                                  border: TableBorder.all(color: Colors.black45, width: 0.8),
-                                  children: [
-                                    TableRow(
-                                      decoration: BoxDecoration(color: Colors.indigo.shade100),
-                                      children: _headers.map((h) => Padding(
-                                        padding: const EdgeInsets.all(6),
-                                        child: Text(h, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
-                                      )).toList(),
-                                    ),
-                                    ..._rows.asMap().entries.map((rEntry) {
-                                      final rIdx = rEntry.key;
-                                      final row = rEntry.value;
-                                      return TableRow(
-                                        children: row.asMap().entries.map((cEntry) {
-                                          final cIdx = cEntry.key;
-                                          final cellVal = cEntry.value;
-                                          return InkWell(
-                                            onTap: widget.isAdmin ? () => _editCellDialog(rIdx, cIdx) : null,
-                                            child: Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                                              child: Text(cellVal, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      );
-                                    }).toList(),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.all(16.0),
+                body: hasPhoto
+                    ? SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(widget.isAdmin ? 'वर्ड डॉक्यूमेंट टेक्स्ट एडिटर (एडमिन संपादन कर सकते हैं):' : 'वर्ड डॉक्यूमेंट व्यूअर:', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
-                            const SizedBox(height: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _wordTextCtrl,
-                                enabled: widget.isAdmin,
-                                maxLines: null,
-                                expands: true,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  hintText: 'यहाँ अपना आदेश, पत्र या परेड विवरण टाइप करें...',
+                            Card(
+                              elevation: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('सीआरपीएफ आधिकारिक दस्तावेज / फॉर्म:', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1B3B6F))),
+                                    const SizedBox(height: 4),
+                                    Text('विवरण: ${f['description']}', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+                                    const SizedBox(height: 12),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(base64Decode(f['photo_base64'])),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
+                      )
+                    : isExcel
+                        ? Column(
+                            children: [
+                              if (widget.isAdmin)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  color: Colors.indigo.shade50,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B3B6F), foregroundColor: Colors.white),
+                                        icon: const Icon(Icons.add_circle, size: 14),
+                                        label: const Text('नई पंक्ति (Row)'),
+                                        onPressed: _addExcelRowDialog,
+                                      ),
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                                        icon: const Icon(Icons.view_column, size: 14),
+                                        label: const Text('नया कॉलम'),
+                                        onPressed: _addExcelColumnDialog,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.vertical,
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Table(
+                                      defaultColumnWidth: const FixedColumnWidth(90),
+                                      border: TableBorder.all(color: Colors.black45, width: 0.8),
+                                      children: [
+                                        TableRow(
+                                          decoration: BoxDecoration(color: Colors.indigo.shade100),
+                                          children: _headers.map((h) => Padding(
+                                            padding: const EdgeInsets.all(6),
+                                            child: Text(h, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                                          )).toList(),
+                                        ),
+                                        ..._rows.asMap().entries.map((rEntry) {
+                                          final rIdx = rEntry.key;
+                                          final row = rEntry.value;
+                                          return TableRow(
+                                            children: row.asMap().entries.map((cEntry) {
+                                              final cIdx = cEntry.key;
+                                              final cellVal = cEntry.value;
+                                              return InkWell(
+                                                onTap: widget.isAdmin ? () => _editCellDialog(rIdx, cIdx) : null,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                                                  child: Text(cellVal, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11)),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          );
+                                        }).toList(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(widget.isAdmin ? 'वर्ड डॉक्यूमेंट टेक्स्ट एडिटर (एडमिन संपादन कर सकते हैं):' : 'वर्ड डॉक्यूमेंट व्यूअर:', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _wordTextCtrl,
+                                    enabled: widget.isAdmin,
+                                    maxLines: null,
+                                    expands: true,
+                                    decoration: const InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      hintText: 'यहाँ अपना आदेश, पत्र या परेड विवरण टाइप करें...',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
               );
             }
           }
@@ -3829,7 +3984,7 @@ jobs:
                           style: TextButton.styleFrom(foregroundColor: Colors.red),
                           onPressed: () async {
                             MTStorage.staffList.remove(staff);
-                            await MTStorage.saveData();
+                            await MTStorage.saveData(changeDesc: 'संपर्क हटाया गया: ${staff['name']}');
                             Navigator.pop(ctx);
                             setState(() {});
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('कार्मिक संपर्क हटा दिया गया!'), backgroundColor: Colors.red));
@@ -3871,7 +4026,7 @@ jobs:
                                 'pl_bal': 30
                               });
                             }
-                            await MTStorage.saveData();
+                            await MTStorage.saveData(changeDesc: 'संपर्क सूची अपडेट: ${nameCtrl.text.trim()}');
                             Navigator.pop(ctx);
                             setState(() {});
                           }
