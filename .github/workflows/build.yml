@@ -23,27 +23,60 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x'
+          flutter-version: '3.22.2'
           channel: 'stable'
 
-      - name: Setup MT Branch App Code
+      - name: Create & Configure Flutter App
         run: |
           flutter create mt_app --org com.crpf.agartala --project-name mt_app
           cd mt_app
           
-          # Stable dependencies
+          # Add all required production dependencies
           flutter pub add shared_preferences intl image_picker url_launcher pdf printing http path_provider share_plus
           
-          # Set App Label
-          sed -i 's/android:label="mt_app"/android:label="MT GC AGT"/g' android/app/src/main/AndroidManifest.xml
+          # Configure AndroidManifest.xml safely
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i 's/android:label="mt_app"/android:label="MT GC AGT"/g' "$MANIFEST"
           
-          # Configure Permissions and FileProvider queries for Android 11+ sharing
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"\/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" \/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" \/>\n    <queries>\n        <package android:name="com.whatsapp" \/>\n        <intent>\n            <action android:name="android.intent.action.VIEW" \/>\n            <data android:scheme="https" \/>\n        </intent>\n        <intent>\n            <action android:name="android.intent.action.SEND" \/>\n            <data android:mimeType="application/pdf" \/>\n        </intent>\n    </queries>' android/app/src/main/AndroidManifest.xml
+          # Insert required network permissions and sharing queries
+          python3 -c "
+          import re
+          path = '$MANIFEST'
+          with open(path, 'r') as f:
+              content = f.read()
+          
+          perms = '''
+              <uses-permission android:name=\"android.permission.INTERNET\"/>
+              <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" android:maxSdkVersion=\"32\"/>
+              <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" android:maxSdkVersion=\"29\"/>
+              <queries>
+                  <package android:name=\"com.whatsapp\" />
+                  <intent>
+                      <action android:name=\"android.intent.action.VIEW\" />
+                      <data android:scheme=\"https\" />
+                  </intent>
+                  <intent>
+                      <action android:name=\"android.intent.action.SEND\" />
+                      <data android:mimeType=\"application/pdf\" />
+                  </intent>
+              </queries>
+          '''
+          content = content.replace('<application', perms + '    <application')
+          with open(path, 'w') as f:
+              f.write(content)
+          "
+          
+          # Fix minSdkVersion safely across both Groovy (.gradle) and Kotlin (.kts)
+          if [ -f "android/app/build.gradle" ]; then
+            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
+            sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle
+          fi
+          if [ -f "android/app/build.gradle.kts" ]; then
+            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' android/app/build.gradle.kts
+            sed -i 's/minSdkVersion(flutter.minSdkVersion)/minSdkVersion(21)/g' android/app/build.gradle.kts
+          fi
 
-          # Ensure minimum SDK is 21
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' android/app/build.gradle
-          sed -i 's/minSdkVersion = flutter.minSdkVersion/minSdkVersion = 21/g' android/app/build.gradle
-          
+          # Write full clean main.dart
           cat << 'EOF' > lib/main.dart
           import 'dart:async';
           import 'dart:convert';
@@ -104,8 +137,7 @@ jobs:
             static String activeAdminForce = '165060166';
             static int cloudLastUpdated = 0;
 
-            // Highly available public JSON endpoint for real-time fleet synchronization
-            static const String cloudStorageEndpoint = 'https://api.jsonstorage.net/v1/json/crpf_mt_gc_agt_master_sync';
+            static const String cloudStorageEndpoint = 'https://api.jsonbin.io/v3/b/66fa61dbe41b4d34e43b174a';
             static Timer? _syncTimer;
             static final StreamController<bool> dataUpdateStream = StreamController<bool>.broadcast();
             static final StreamController<String> liveAlertStream = StreamController<String>.broadcast();
@@ -118,7 +150,6 @@ jobs:
               await fetchCloudSync();
             }
 
-            // Universal PDF export and direct share function
             static Future<void> sharePdf(pw.Document pdf, String fileName) async {
               try {
                 final bytes = await pdf.save();
@@ -129,7 +160,7 @@ jobs:
                 await Share.shareXFiles(
                   [XFile(file.path, mimeType: 'application/pdf')],
                   subject: 'CRPF GC AGT MT Report: $fileName',
-                  text: 'Group Centre CRPF Agartala - MT Branch Official Document: $fileName.pdf',
+                  text: 'Group Centre CRPF Agartala - MT Branch Report: $fileName.pdf',
                 );
               } catch (e) {
                 debugPrint('PDF Share Error: $e');
@@ -139,44 +170,44 @@ jobs:
             static void loadLocalData() {
               activeAdminForce = prefs.getString('crpf_active_admin_force') ?? '165060166';
 
-              final staffStr = prefs.getString('crpf_staff_master_v16');
+              final staffStr = prefs.getString('crpf_staff_master_v17');
               staffList = staffStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(staffStr))
                   : List<Map<String, dynamic>>.from(defaultStaff);
               sortStaffByCategoryAndSeniority();
 
-              final vehStr = prefs.getString('crpf_veh_master_v16');
+              final vehStr = prefs.getString('crpf_veh_master_v17');
               vehicles = vehStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(vehStr))
                   : List<Map<String, dynamic>>.from(defaultVehicles);
               sortVehiclesByCategory();
 
-              final logsStr = prefs.getString('crpf_inout_master_v16');
+              final logsStr = prefs.getString('crpf_inout_master_v17');
               inOutLogs = logsStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(logsStr))
                   : List<Map<String, dynamic>>.from(defaultLogs);
 
-              final leavesStr = prefs.getString('crpf_leaves_master_v16');
+              final leavesStr = prefs.getString('crpf_leaves_master_v17');
               leaves = leavesStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(leavesStr))
                   : List<Map<String, dynamic>>.from(defaultLeaves);
 
-              final passStr = prefs.getString('crpf_passwords_v16');
+              final passStr = prefs.getString('crpf_passwords_v17');
               passwords = passStr != null
                   ? Map<String, String>.from(jsonDecode(passStr))
                   : {activeAdminForce: 'Mt@$activeAdminForce'};
 
-              final paradeColsStr = prefs.getString('crpf_parade_cols_v16');
+              final paradeColsStr = prefs.getString('crpf_parade_cols_v17');
               paradeCustomColumns = paradeColsStr != null
                   ? List<String>.from(jsonDecode(paradeColsStr))
                   : List<String>.from(defaultParadeCols);
 
-              final paradeStr = prefs.getString('crpf_parade_custom_v16');
+              final paradeStr = prefs.getString('crpf_parade_custom_v17');
               paradeCustomRows = paradeStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(paradeStr))
                   : List<Map<String, dynamic>>.from(defaultParadeRows);
 
-              final filesStr = prefs.getString('crpf_custom_parade_files_v16');
+              final filesStr = prefs.getString('crpf_custom_parade_files_v17');
               customParadeFiles = filesStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(filesStr))
                   : [
@@ -208,7 +239,7 @@ jobs:
                       }
                     ];
 
-              final dutiesStr = prefs.getString('crpf_date_wise_duties_v16');
+              final dutiesStr = prefs.getString('crpf_date_wise_duties_v17');
               dateWiseDuties = dutiesStr != null
                   ? Map<String, dynamic>.from(jsonDecode(dutiesStr))
                   : {
@@ -216,25 +247,24 @@ jobs:
                       '21/10/2026': defaultTodayDuty,
                     };
 
-              final notifStr = prefs.getString('crpf_notifications_v16');
+              final notifStr = prefs.getString('crpf_notifications_v17');
               notifications = notifStr != null
                   ? List<Map<String, dynamic>>.from(jsonDecode(notifStr))
                   : [
                       {
                         'id': 'notif_1',
                         'title': 'Auto-Sync Active',
-                        'message': 'All 40 vehicles, personnel directory, and live cloud sync are online.',
+                        'message': 'All 40 vehicles, personnel directory, and live sync are online.',
                         'time': DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now()),
                       }
                     ];
 
-              cloudLastUpdated = prefs.getInt('crpf_cloud_ts_v16') ?? 0;
+              cloudLastUpdated = prefs.getInt('crpf_cloud_ts_v17') ?? 0;
             }
 
-            // Real-time synchronization loop (polls every 3 seconds for immediate updates)
             static void startCloudSyncListener() {
               _syncTimer?.cancel();
-              _syncTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+              _syncTimer = Timer.periodic(const Duration(seconds: 4), (timer) async {
                 await fetchCloudSync();
               });
             }
@@ -249,7 +279,8 @@ jobs:
                 ).timeout(const Duration(seconds: 4));
 
                 if (response.statusCode == 200 && response.body.isNotEmpty) {
-                  final data = jsonDecode(response.body);
+                  final decoded = jsonDecode(response.body);
+                  final data = decoded['record'] ?? decoded;
                   int remoteTs = data['ts'] ?? 0;
                   if (remoteTs > cloudLastUpdated) {
                     cloudLastUpdated = remoteTs;
@@ -267,11 +298,11 @@ jobs:
                     sortStaffByCategoryAndSeniority();
                     sortVehiclesByCategory();
                     await saveLocalData();
-                    await prefs.setInt('crpf_cloud_ts_v16', cloudLastUpdated);
+                    await prefs.setInt('crpf_cloud_ts_v17', cloudLastUpdated);
 
                     String alertMsg = data['last_change_desc'] ?? 'A new update was made by Admin!';
                     if (oldAdmin != activeAdminForce) {
-                      alertMsg = 'Admin rights have been transferred to Force No: $activeAdminForce!';
+                      alertMsg = 'Admin authority transferred to Force No: $activeAdminForce!';
                     }
                     liveAlertStream.add(alertMsg);
                     dataUpdateStream.add(true);
@@ -319,7 +350,7 @@ jobs:
               cloudLastUpdated = DateTime.now().millisecondsSinceEpoch;
 
               await saveLocalData();
-              await prefs.setInt('crpf_cloud_ts_v16', cloudLastUpdated);
+              await prefs.setInt('crpf_cloud_ts_v17', cloudLastUpdated);
               dataUpdateStream.add(true);
 
               try {
@@ -346,16 +377,16 @@ jobs:
 
             static Future<void> saveLocalData() async {
               await prefs.setString('crpf_active_admin_force', activeAdminForce);
-              await prefs.setString('crpf_staff_master_v16', jsonEncode(staffList));
-              await prefs.setString('crpf_veh_master_v16', jsonEncode(vehicles));
-              await prefs.setString('crpf_inout_master_v16', jsonEncode(inOutLogs));
-              await prefs.setString('crpf_leaves_master_v16', jsonEncode(leaves));
-              await prefs.setString('crpf_passwords_v16', jsonEncode(passwords));
-              await prefs.setString('crpf_parade_cols_v16', jsonEncode(paradeCustomColumns));
-              await prefs.setString('crpf_parade_custom_v16', jsonEncode(paradeCustomRows));
-              await prefs.setString('crpf_custom_parade_files_v16', jsonEncode(customParadeFiles));
-              await prefs.setString('crpf_date_wise_duties_v16', jsonEncode(dateWiseDuties));
-              await prefs.setString('crpf_notifications_v16', jsonEncode(notifications));
+              await prefs.setString('crpf_staff_master_v17', jsonEncode(staffList));
+              await prefs.setString('crpf_veh_master_v17', jsonEncode(vehicles));
+              await prefs.setString('crpf_inout_master_v17', jsonEncode(inOutLogs));
+              await prefs.setString('crpf_leaves_master_v17', jsonEncode(leaves));
+              await prefs.setString('crpf_passwords_v17', jsonEncode(passwords));
+              await prefs.setString('crpf_parade_cols_v17', jsonEncode(paradeCustomColumns));
+              await prefs.setString('crpf_parade_custom_v17', jsonEncode(paradeCustomRows));
+              await prefs.setString('crpf_custom_parade_files_v17', jsonEncode(customParadeFiles));
+              await prefs.setString('crpf_date_wise_duties_v17', jsonEncode(dateWiseDuties));
+              await prefs.setString('crpf_notifications_v17', jsonEncode(notifications));
             }
 
             static int getGroupPriority(Map<String, dynamic> staff) {
@@ -429,7 +460,7 @@ jobs:
               'SI\nMM', 'ASI\nMM', 'HC\nMMV', 'CT\nMMV', 'CT\nDTR', 'TOTAL', 'G/TOT'
             ];
 
-            // 40 Staff Master Roster
+            // 40 Personnel Master Roster
             static final List<Map<String, dynamic>> defaultStaff = [
               {'force': '890123456', 'rank': 'MTO', 'name': 'RANJEET KUMAR SINGH', 'role': 'MTO', 'mobile': '9412345678', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '10/01/2023', 'blood': 'B+', 'icard_no': 'CRPF-AGT-MTO01', 'dl_no': 'UP14-1990-001234', 'dl_validity': '31/12/2028', 'state': 'UTTAR PRADESH', 'address': 'Varanasi, Uttar Pradesh', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
               {'force': '900440064', 'rank': 'INSP/MT', 'name': 'MD. MOKTAR HUSSAIN', 'role': 'SO', 'mobile': '9911439132', 'status': 'PRESENT', 'leave_days': 0, 'course_name': '', 'location': 'GC AGT', 'duty_type': 'CAMP', 'gc_reporting_date': '15/06/2023', 'blood': 'AB+', 'icard_no': 'CRPF-AGT-90044', 'dl_no': 'BR01-1991-002134', 'dl_validity': '31/12/2028', 'state': 'BIHAR', 'address': 'Vill- Mohanpur, Dist- Patna, Bihar', 'photo_base64': '', 'attach_type': 'NONE', 'attach_office': '', 'el_bal': 60, 'cl_bal': 15, 'pl_bal': 30},
@@ -1104,7 +1135,6 @@ jobs:
               );
             }
 
-            // Real-time multi-device admin delegation
             void _showDelegateAdminDialog() {
               String selectedForce = MTStorage.staffList[0]['force'];
 
@@ -4077,7 +4107,7 @@ jobs:
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.horizontal(16.0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
