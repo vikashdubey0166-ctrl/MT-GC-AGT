@@ -32,7 +32,7 @@ jobs:
           cd mt_app
           
           # Add all required production dependencies
-          flutter pub add shared_preferences intl image_picker url_launcher pdf printing http path_provider share_plus
+          flutter pub add shared_preferences intl image_picker url_launcher pdf printing http path_provider share
           
           # Configure AndroidManifest.xml safely
           MANIFEST="android/app/src/main/AndroidManifest.xml"
@@ -83,7 +83,8 @@ jobs:
           import 'dart:math';
           import 'dart:typed_data';
           import 'dart:io';
-          import 'package:flutter/material.dart';
+          import 'package:share_plus/share_plus.dart';
+          import 'package:onesignal_flutter/onesignal_flutter.dart';
           import 'package:flutter/services.dart';
           import 'package:shared_preferences/shared_preferences.dart';
           import 'package:intl/intl.dart';
@@ -95,13 +96,15 @@ jobs:
           import 'package:http/http.dart' as http;
           import 'package:path_provider/path_provider.dart';
           import 'package:share_plus/share_plus.dart';
-
+          
           void main() async {
             WidgetsFlutterBinding.ensureInitialized();
+            OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+            OneSignal.initialize("YOUR_ONESIGNAL_APP_ID");
+            OneSignal.Notifications.requestPermission(true);
             await MTStorage.init();
             runApp(const MTBranchApp());
           }
-
           class MTBranchApp extends StatelessWidget {
             const MTBranchApp({Key? key}) : super(key: key);
 
@@ -268,7 +271,7 @@ jobs:
                 await fetchCloudSync();
               });
             }
-
+            
             static Future<void> fetchCloudSync() async {
               if (isSyncing) return;
               isSyncing = true;
