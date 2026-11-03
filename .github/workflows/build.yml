@@ -272,30 +272,36 @@ jobs:
               });
             }
             
-            static Future<void> fetchCloudSync() async {
+                        static Future<void> fetchCloudSync() async {
               if (isSyncing) return;
               isSyncing = true;
               try {
                 final response = await http.get(
-                  Uri.parse(cloudStorageEndpoint),
-                  headers: {'Accept': 'application/json'},
+                  Uri.parse('$cloudStorageEndpoint/latest'),
+                  headers: {
+                    'Accept': 'application/json',
+                    'X-Bin-Meta': 'false',
+                  },
                 ).timeout(const Duration(seconds: 4));
 
                 if (response.statusCode == 200 && response.body.isNotEmpty) {
-                  final decoded = jsonDecode(response.body);
-                  final data = decoded['record'] ?? decoded;
-                  int remoteTs = data['ts'] ?? 0;
+                  final dynamic decoded = jsonDecode(response.body);
+                  final Map<String, dynamic> data = (decoded is Map<String, dynamic> && decoded.containsKey('record'))
+                      ? Map<String, dynamic>.from(decoded['record'])
+                      : Map<String, dynamic>.from(decoded);
+
+                  int remoteTs = data['ts'] is int ? data['ts'] : (int.tryParse(data['ts'].toString()) ?? 0);
                   if (remoteTs > cloudLastUpdated) {
                     cloudLastUpdated = remoteTs;
                     final oldAdmin = activeAdminForce;
-                    activeAdminForce = data['admin'] ?? activeAdminForce;
+                    if (data['admin'] != null) activeAdminForce = data['admin'].toString();
                     
-                    if (data['staff'] != null) staffList = List<Map<String, dynamic>>.from(data['staff']);
-                    if (data['veh'] != null) vehicles = List<Map<String, dynamic>>.from(data['veh']);
+                    if (data['staff'] != null) staffList = List>.from(data['staff']);
+                    if (data['veh'] != null) vehicles = List>.from(data['veh']);
                     if (data['duties'] != null) dateWiseDuties = Map<String, dynamic>.from(data['duties']);
-                    if (data['logs'] != null) inOutLogs = List<Map<String, dynamic>>.from(data['logs']);
-                    if (data['files'] != null) customParadeFiles = List<Map<String, dynamic>>.from(data['files']);
-                    if (data['notifs'] != null) notifications = List<Map<String, dynamic>>.from(data['notifs']);
+                    if (data['logs'] != null) inOutLogs = List>.from(data['logs']);
+                    if (data['files'] != null) customParadeFiles = List>.from(data['files']);
+                    if (data['notifs'] != null) notifications = List>.from(data['notifs']);
                     if (data['passwords'] != null) passwords = Map<String, String>.from(data['passwords']);
 
                     sortStaffByCategoryAndSeniority();
