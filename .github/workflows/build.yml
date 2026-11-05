@@ -32,7 +32,7 @@ jobs:
           cd mt_app
           
           # Add all required production dependencies
-          flutter pub add shared_preferences intl image_picker url_launcher pdf printing http path_provider share
+          flutter pub add shared_preferences intl image_picker url_launcher pdf printing http path_provider share_plus onesignal_flutter
           
           # Configure AndroidManifest.xml safely
           MANIFEST="android/app/src/main/AndroidManifest.xml"
@@ -86,7 +86,6 @@ jobs:
           import 'package:share_plus/share_plus.dart';
           import 'package:onesignal_flutter/onesignal_flutter.dart';
           import 'package:flutter/services.dart';
-          import 'package:shared_preferences/shared_preferences.dart';
           import 'package:intl/intl.dart';
           import 'package:image_picker/image_picker.dart';
           import 'package:url_launcher/url_launcher.dart';
