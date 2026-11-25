@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,11 +64,6 @@
             transform: translateY(-2px);
             color: #38bdf8 !important;
         }
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-100 antialiased min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-white pb-20">
@@ -89,7 +83,9 @@
                     <div class="flex items-center gap-2">
                         <h1 class="font-black text-base md:text-lg tracking-wide text-white flex items-center gap-1.5">
                             MT GC AGT
-                            <span class="text-[10px] text-sky-400 font-mono font-semibold bg-sky-950/80 px-2 py-0.5 rounded-full border border-sky-800">FLEET</span>
+                            <span class="text-[10px] text-emerald-400 font-mono font-semibold bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE SYNC
+                            </span>
                         </h1>
                         <span id="header-role-badge" class="px-2 py-0.5 text-[10px] rounded-full font-bold uppercase bg-amber-500 text-slate-950">Guest</span>
                     </div>
@@ -99,6 +95,12 @@
 
             <!-- Top Action Controls -->
             <div class="flex items-center space-x-2">
+                <!-- Admin Master Panel Button -->
+                <button id="header-admin-btn" onclick="switchTab('admin')" title="Admin Master Control" class="hidden p-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/40 transition flex items-center gap-1.5 text-xs font-bold">
+                    <i class="fa-solid fa-user-shield text-sm"></i>
+                    <span class="hidden md:inline">Admin</span>
+                </button>
+
                 <!-- Global PDF Quick Export -->
                 <button onclick="exportComprehensiveReportPDF()" title="Export & Share Full PDF Report" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-400 border border-slate-700 hover:border-rose-500/50 transition flex items-center gap-1.5 text-xs font-semibold">
                     <i class="fa-solid fa-file-pdf text-sm"></i>
@@ -235,7 +237,7 @@
                     </div>
                     <div class="text-left">
                         <span class="text-xs font-bold text-white block">Duty Roster</span>
-                        <span class="text-[10px] text-slate-400">Pol Guard & MT Park</span>
+                        <span class="text-[10px] text-slate-400">MT Park Duty</span>
                     </div>
                 </button>
 
@@ -245,7 +247,7 @@
                     </div>
                     <div class="text-left">
                         <span class="text-xs font-bold text-white block">Direct Calls</span>
-                        <span class="text-[10px] text-slate-400">48 Personnel</span>
+                        <span class="text-[10px] text-slate-400" id="quick-dir-count">48 Personnel</span>
                     </div>
                 </button>
 
@@ -283,11 +285,11 @@
                     </div>
                 </div>
 
-                <!-- Duty Highlight Summary -->
+                <!-- Duty Highlight Summary (Only MT Park) -->
                 <div class="bg-slate-800/80 border border-slate-700 p-4 rounded-2xl shadow-sm">
                     <div class="flex items-center justify-between mb-3 border-b border-slate-700/80 pb-2.5">
                         <h2 class="font-bold text-white text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-calendar-check text-amber-400"></i> Active Duty Assignments
+                            <i class="fa-solid fa-calendar-check text-amber-400"></i> Active Duty Assignment
                         </h2>
                         <div class="flex items-center gap-2">
                             <button onclick="exportDutyRosterPDF()" class="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1">
@@ -299,28 +301,15 @@
                     </div>
                     
                     <div class="space-y-2.5">
-                        <!-- Pol Guard Roster Preview -->
-                        <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3">
-                            <div class="flex justify-between items-center mb-1.5">
-                                <span class="text-xs font-bold text-sky-300 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-tower-observation text-sky-400"></i> Pol Guard Duty (1 HC + 4 CT)
-                                </span>
-                                <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded-full font-semibold">No Time Specified</span>
-                            </div>
-                            <div id="dash-pol-guard-names" class="text-xs text-slate-300 leading-relaxed">
-                                Loading...
-                            </div>
-                        </div>
-
                         <!-- MT Park Roster Preview -->
-                        <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3">
-                            <div class="flex justify-between items-center mb-1.5">
+                        <div class="bg-slate-900/80 border border-slate-700/80 rounded-xl p-3.5">
+                            <div class="flex justify-between items-center mb-2">
                                 <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
                                     <i class="fa-solid fa-square-parking text-amber-400"></i> MT Park Duty (1 HC + 1 CT)
                                 </span>
-                                <span class="text-[10px] bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded-full font-semibold">No Time Specified</span>
+                                <span class="text-[10px] bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded-full font-semibold">Active Duty</span>
                             </div>
-                            <div id="dash-mt-park-names" class="text-xs text-slate-300 leading-relaxed">
+                            <div id="dash-mt-park-names" class="text-xs text-slate-300 leading-relaxed space-y-1">
                                 Loading...
                             </div>
                         </div>
@@ -339,12 +328,12 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mt-3">
                     <div class="bg-slate-900/60 p-3 rounded-xl border border-indigo-700/30">
-                        <span class="font-bold text-indigo-300">Attached Out Vehicles:</span>
-                        <p class="mt-1 text-slate-300" id="dash-attach-veh-summary">TR01 G 0986 (Tractor) - Attached with M&N Sector</p>
+                        <span class="font-bold text-indigo-300">Attached Vehicles:</span>
+                        <p class="mt-1 text-slate-300" id="dash-attach-veh-summary">Loading...</p>
                     </div>
                     <div class="bg-slate-900/60 p-3 rounded-xl border border-indigo-700/30">
                         <span class="font-bold text-indigo-300">Attached Personnel:</span>
-                        <p class="mt-1 text-slate-300" id="dash-attach-prs-summary">1 personnel attached out of GC AGT</p>
+                        <p class="mt-1 text-slate-300" id="dash-attach-prs-summary">Loading...</p>
                     </div>
                 </div>
             </div>
@@ -374,7 +363,7 @@
 
                 <!-- Status Filter Pills -->
                 <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs hide-scrollbar">
-                    <button onclick="filterVehicles('ALL')" class="veh-filter-btn px-3 py-1.5 rounded-xl bg-sky-600 text-white font-semibold shrink-0" data-filter="ALL">All (38)</button>
+                    <button id="veh-filter-all-btn" onclick="filterVehicles('ALL')" class="veh-filter-btn px-3 py-1.5 rounded-xl bg-sky-600 text-white font-semibold shrink-0" data-filter="ALL">All (38)</button>
                     <button onclick="filterVehicles('AVAILABLE')" class="veh-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="AVAILABLE">Available (MT Park)</button>
                     <button onclick="filterVehicles('ON_DUTY')" class="veh-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="ON_DUTY">On Duty (Out)</button>
                     <button onclick="filterVehicles('OFF_ROAD')" class="veh-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="OFF_ROAD">Off Road</button>
@@ -413,11 +402,11 @@
 
                 <!-- Cadre Filters -->
                 <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs hide-scrollbar">
-                    <button onclick="filterPersonnel('ALL')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-sky-600 text-white font-semibold shrink-0" data-filter="ALL">All (48)</button>
-                    <button onclick="filterPersonnel('SO')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="SO">SO's Cadre (3)</button>
-                    <button onclick="filterPersonnel('HC_DVR')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="HC_DVR">HC/DVR (20)</button>
-                    <button onclick="filterPersonnel('CT_DVR')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="CT_DVR">CT/DVR (20)</button>
-                    <button onclick="filterPersonnel('WORKSHOP')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="WORKSHOP">Workshop (5)</button>
+                    <button id="prs-filter-all-btn" onclick="filterPersonnel('ALL')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-sky-600 text-white font-semibold shrink-0" data-filter="ALL">All (48)</button>
+                    <button id="prs-filter-so-btn" onclick="filterPersonnel('SO')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="SO">SO's Cadre (3)</button>
+                    <button id="prs-filter-hc-btn" onclick="filterPersonnel('HC_DVR')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="HC_DVR">HC/DVR (20)</button>
+                    <button id="prs-filter-ct-btn" onclick="filterPersonnel('CT_DVR')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="CT_DVR">CT/DVR (20)</button>
+                    <button id="prs-filter-ws-btn" onclick="filterPersonnel('WORKSHOP')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="WORKSHOP">Workshop (5)</button>
                     <button onclick="filterPersonnel('LEAVE')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="LEAVE">On Leave</button>
                     <button onclick="filterPersonnel('COURSE')" class="prs-filter-btn px-3 py-1.5 rounded-xl bg-slate-900 text-slate-300 font-medium shrink-0" data-filter="COURSE">On Course</button>
                 </div>
@@ -445,7 +434,7 @@
                 <form id="vehicle-out-form" onsubmit="handleVehicleOut(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Select Available Vehicle *</label>
-                        <select id="out-veh-select" required class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500"></select>
+                        <select id="out-veh-select" onchange="autoFillOpeningKm()" required class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500"></select>
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Select Driver *</label>
@@ -507,7 +496,7 @@
             </div>
         </section>
 
-        <!-- 5. DUTY ROSTER VIEW -->
+        <!-- 5. DUTY ROSTER VIEW (MT PARK ONLY) -->
         <section id="view-duty" class="hidden space-y-4">
             <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
                 <div class="flex items-start gap-2.5">
@@ -515,8 +504,7 @@
                     <div>
                         <h4 class="font-bold text-white">Duty Roster Management (Admin Controls)</h4>
                         <p class="text-[11px] text-slate-400 mt-0.5">
-                            <strong>Pol Guard:</strong> 1 Head Constable + 4 Constables (No time specified). 
-                            <strong>MT Park:</strong> 1 Head Constable + 1 Constable (No time specified). Any cadre HC/CT eligible.
+                            <strong>MT Park Duty:</strong> 1 Head Constable + 1 Constable. Any cadre HC/CT eligible.
                         </p>
                     </div>
                 </div>
@@ -526,46 +514,8 @@
                 </button>
             </div>
 
-            <!-- Duty Assignment Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                <!-- Pol Guard Duty Box -->
-                <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between border-b border-slate-700/80 pb-2 mb-3">
-                            <h3 class="font-bold text-white text-sm flex items-center gap-2">
-                                <span class="w-7 h-7 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-xs border border-sky-500/20">
-                                    <i class="fa-solid fa-tower-observation"></i>
-                                </span>
-                                Pol Guard Duty
-                            </h3>
-                            <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded-full font-bold">1 HC + 4 CT</span>
-                        </div>
-
-                        <form id="pol-guard-form" onsubmit="savePolGuardDuty(event)" class="space-y-3 text-xs">
-                            <div>
-                                <label class="block font-semibold text-slate-300 mb-1">Head Constable (HC) *</label>
-                                <select id="pol-hc" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 focus:ring-2 focus:ring-sky-500"></select>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="block font-semibold text-slate-300">Constables 1 to 4 (CT) *</label>
-                                <select id="pol-ct-1" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2"></select>
-                                <select id="pol-ct-2" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2"></select>
-                                <select id="pol-ct-3" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2"></select>
-                                <select id="pol-ct-4" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2"></select>
-                            </div>
-                            <button type="submit" id="pol-guard-save-btn" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded-xl mt-2 transition shadow-lg shadow-sky-600/30">
-                                Save Pol Guard Roster
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="mt-4 pt-3 border-t border-slate-700 text-xs">
-                        <span class="font-semibold text-slate-400">Current Assigned Roster:</span>
-                        <div id="pol-active-preview" class="mt-1.5 space-y-1 text-slate-200 font-medium"></div>
-                    </div>
-                </div>
-
+            <!-- Duty Assignment Card (MT Park Only) -->
+            <div class="max-w-xl mx-auto">
                 <!-- MT Park Duty Box -->
                 <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 flex flex-col justify-between">
                     <div>
@@ -588,7 +538,7 @@
                                 <label class="block font-semibold text-slate-300 mb-1">Constable (CT) *</label>
                                 <select id="mtpark-ct" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 focus:ring-2 focus:ring-amber-500"></select>
                             </div>
-                            <button type="submit" id="mt-park-save-btn" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-2.5 rounded-xl mt-2 transition shadow-lg shadow-amber-600/30">
+                            <button type="submit" id="mt-park-save-btn" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold py-2.5 rounded-xl mt-2 transition shadow-lg shadow-amber-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
                                 Save MT Park Roster
                             </button>
                         </form>
@@ -599,7 +549,6 @@
                         <div id="mtpark-active-preview" class="mt-1.5 space-y-1 text-slate-200 font-medium"></div>
                     </div>
                 </div>
-
             </div>
         </section>
 
@@ -742,7 +691,7 @@
                         </p>
                         <form id="transfer-admin-form" onsubmit="handleAdminTransfer(event)" class="space-y-2.5">
                             <div>
-                                <label class="block font-semibold text-slate-300 mb-1">Select New Admin (from 48 Personnel)</label>
+                                <label class="block font-semibold text-slate-300 mb-1">Select New Admin</label>
                                 <select id="transfer-admin-select" class="w-full bg-slate-800 border border-slate-700 text-white rounded-xl p-2.5"></select>
                             </div>
                             <button type="submit" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2 rounded-xl transition shadow-lg shadow-amber-500/20">
@@ -774,6 +723,14 @@
                         </form>
                     </div>
 
+                </div>
+
+                <!-- System Reset Utility -->
+                <div class="mt-4 pt-3 border-t border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+                    <span class="text-slate-400">Need to restore default Nominal Roll & Fleet list?</span>
+                    <button onclick="resetToDefaultSystemData()" class="bg-slate-700 hover:bg-rose-900/60 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-xl font-semibold transition">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Default Factory Data
+                    </button>
                 </div>
             </div>
         </section>
@@ -970,7 +927,7 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Rank *</label>
-                        <input type="text" id="admin-prs-rank" required placeholder="e.g. HC/DVR" class="w-full bg-slate-950 border border-slate-700 text-white rounded-xl p-2.5">
+                        <input type="text" id="admin-prs-rank" required placeholder="e.g. HC/DVR" class="w-full bg-slate-950 border border-slate-700 text-white rounded-xl p-2.5 uppercase">
                     </div>
                 </div>
                 <div>
@@ -983,7 +940,7 @@
                         <select id="admin-prs-cadre" onchange="toggleDriverFieldsInForm()" class="w-full bg-slate-950 border border-slate-700 text-white rounded-xl p-2.5">
                             <option value="SO">SO's Cadre</option>
                             <option value="HC_DVR">HC/DVR</option>
-                            <option value="CT_DVR">CT/DVR</option>
+                            <option value="CT_DVR" selected>CT/DVR</option>
                             <option value="WORKSHOP">Workshop</option>
                         </select>
                     </div>
@@ -997,7 +954,7 @@
                 <div id="admin-prs-driver-fields" class="space-y-2 border border-slate-800 bg-slate-950/50 p-2.5 rounded-xl">
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Driving License No (DL)</label>
-                        <input type="text" id="admin-prs-dlno" placeholder="e.g. TR0119930008811" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2">
+                        <input type="text" id="admin-prs-dlno" placeholder="e.g. TR0119930008811" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2 uppercase">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">DL Validity Date</label>
@@ -1005,15 +962,13 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block font-semibold text-slate-300 mb-1">Duty / Attendance Status</label>
-                        <select id="admin-prs-status" class="w-full bg-slate-950 border border-slate-700 text-white rounded-xl p-2.5">
-                            <option value="PRESENT">Present</option>
-                            <option value="LEAVE">Leave</option>
-                            <option value="COURSE">Course</option>
-                        </select>
-                    </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Duty / Attendance Status</label>
+                    <select id="admin-prs-status" class="w-full bg-slate-950 border border-slate-700 text-white rounded-xl p-2.5">
+                        <option value="PRESENT">Present</option>
+                        <option value="LEAVE">Leave</option>
+                        <option value="COURSE">Course</option>
+                    </select>
                 </div>
 
                 <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition shadow-lg shadow-emerald-600/30">
@@ -1028,12 +983,10 @@
         /* ==========================================================================
            1. VERIFIED INITIAL DATA SET
            ========================================================================== */
+        const STORAGE_KEY = 'MT_GC_AGT_LIVE_STATE_V2';
+        const SYNC_CHANNEL_NAME = 'MT_GC_AGT_REALTIME_SYNC';
+        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel(SYNC_CHANNEL_NAME) : null;
 
-        // All 48 Personnel extracted directly from Nominal Rolls:
-        // SOs: 3 (Md. Moktar Hussain, Edlapalli Harinath, Hit Lal Pandit)
-        // HC/DVR: 20
-        // CT/DVR: 20
-        // Workshop: 5 (HC/MMV, CT/MMV, CT/PTR)
         const INITIAL_PERSONNEL = [
             // SOs Cadre (3)
             { id: "900440064", forceNo: "900440064", rank: "INSP/MT", name: "MD. MOKTAR HUSSAIN", cadre: "SO", phone: "9436123401", status: "PRESENT", dlNo: "TR0119950001234", dlValidity: "2028-12-31", photo: "", isDriver: true, attachment: { type: "NONE", location: "GC AGT" } },
@@ -1092,12 +1045,11 @@
             { id: "115094667", forceNo: "115094667", rank: "CT/PTR", name: "MD. ROKIBUL ISLAM", cadre: "WORKSHOP", phone: "9436003005", status: "PRESENT", dlNo: "", dlValidity: "", photo: "", isDriver: false, attachment: { type: "NONE", location: "GC AGT" } }
         ];
 
-        // 38 Vehicles extracted directly from Vehicle Wise Monthly Inspection Roster GC AGT
         const INITIAL_VEHICLES = [
             { sl: 1, regNo: "AS01 FH 5372", type: "TATA SAFARI", year: 2022, status: "AVAILABLE", km: 45210, inCharge: "MD. MOKTAR HUSSAIN (INSP/MT)", fuelType: "Diesel", attachment: { type: "NONE", location: "GC AGT" } },
             { sl: 2, regNo: "AS01 EG 8169", type: "M/SCORPIO", year: 2019, status: "AVAILABLE", km: 68420, inCharge: "HIT LAL PANDIT (ASI/MT)", fuelType: "Diesel", attachment: { type: "NONE", location: "GC AGT" } },
             { sl: 3, regNo: "TR01 C 1324", type: "SML MINI BUS", year: 2016, status: "AVAILABLE", km: 92350, inCharge: "DEBASHISH DEB (HC/DVR)", fuelType: "Diesel", attachment: { type: "NONE", location: "GC AGT" } },
-            { sl: 4, regNo: "AS01 GL 5719", type: "M/BOLERO NEO", year: 2025, status: "AVAILABLE", km: 12450, inCharge: "RIZWAN AHAMAD KHAN (CT/DVR)", fuelType: "Diesel", attachment: { type: "NONE", location: "GC AGT" } },
+            { sl: 4, regNo: "AS01 GL 5719", type: "M/BOLERO NEO", year: 2025, status: "ON_DUTY", km: 12450, inCharge: "RIZWAN AHAMAD KHAN (CT/DVR)", fuelType: "Diesel", attachment: { type: "NONE", location: "GC AGT" } },
             { sl: 5, regNo: "AS01 BS 1818", type: "M/SWIFT DEZIRE", year: 2015, status: "AVAILABLE", km: 114890, inCharge: "SURESH KUMAR (HC/DVR)", fuelType: "Petrol", attachment: { type: "NONE", location: "GC AGT" } },
             { sl: 6, regNo: "TR01 G 1154", type: "EICHER", year: 2017, status: "AVAILABLE", km: 83200, inCharge: "R. MADESWARAN (HC/DVR)", fuelType: "Diesel", attachment: { type: "NONE", location: "GC AGT" } },
             { sl: 7, regNo: "TR01 G 1155", type: "EICHER", year: 2017, status: "AVAILABLE", km: 79140, inCharge: "MANI RAM CHETTRI (HC/DVR)", fuelType: "Diesel", attachment: { type: "NONE", location: "GC AGT" } },
@@ -1134,10 +1086,7 @@
             { sl: 38, regNo: "TR01 G 0986", type: "TRACTOR", year: 2026, status: "ATTACHED_OUT", km: 8700, inCharge: "ATUL KUMAR (CT/DVR)", fuelType: "Diesel", attachment: { type: "OUT", location: "Attached with M&N Sector" } }
         ];
 
-        /* ==========================================================================
-           2. IN-MEMORY APPLICATION STATE
-           ========================================================================== */
-        let state = {
+        const DEFAULT_STATE = {
             personnel: JSON.parse(JSON.stringify(INITIAL_PERSONNEL)),
             vehicles: JSON.parse(JSON.stringify(INITIAL_VEHICLES)),
             logs: [
@@ -1158,15 +1107,6 @@
                 }
             ],
             duties: {
-                polGuard: {
-                    hc: "911262278", // Debashish Deb
-                    ct1: "031465834", // Rizwan Ahamad Khan
-                    ct2: "045022839", // Ram Kumar
-                    ct3: "125350263", // Manoj Kumar Ray
-                    ct4: "125002666", // Mahaveer Singh
-                    assignedBy: "Admin",
-                    assignedAt: "2026-11-07"
-                },
                 mtPark: {
                     hc: "940760076", // Suresh Kumar
                     ct: "135352802",  // Upendra Debnath
@@ -1182,8 +1122,98 @@
             logFilter: 'ACTIVE'
         };
 
-        // Reflect seed log status
-        state.vehicles.find(v => v.regNo === "AS01 GL 5719").status = "ON_DUTY";
+        /* ==========================================================================
+           2. REAL-TIME LIVE SYNC & PERSISTENCE ENGINE
+           ========================================================================== */
+        function loadPersistedState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    return {
+                        ...DEFAULT_STATE,
+                        ...parsed,
+                        duties: {
+                            mtPark: parsed.duties?.mtPark || DEFAULT_STATE.duties.mtPark
+                        }
+                    };
+                }
+            } catch (e) {
+                console.warn("Storage read fallback:", e);
+            }
+            return JSON.parse(JSON.stringify(DEFAULT_STATE));
+        }
+
+        let state = loadPersistedState();
+
+        function persistAndSyncState(broadcastMsg = null) {
+            try {
+                const payloadToStore = {
+                    personnel: state.personnel,
+                    vehicles: state.vehicles,
+                    logs: state.logs,
+                    duties: state.duties,
+                    adminForceNo: state.adminForceNo,
+                    lastUpdated: Date.now()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payloadToStore));
+
+                if (syncChannel) {
+                    syncChannel.postMessage({
+                        type: 'STATE_SYNC',
+                        payload: payloadToStore,
+                        message: broadcastMsg
+                    });
+                }
+            } catch (e) {
+                console.warn("Storage write error:", e);
+            }
+        }
+
+        // Listen to live changes from other open tabs/windows
+        if (syncChannel) {
+            syncChannel.onmessage = (event) => {
+                if (event.data && event.data.type === 'STATE_SYNC') {
+                    const incoming = event.data.payload;
+                    state.personnel = incoming.personnel;
+                    state.vehicles = incoming.vehicles;
+                    state.logs = incoming.logs;
+                    state.duties = incoming.duties;
+                    state.adminForceNo = incoming.adminForceNo;
+
+                    refreshAllViews();
+                    if (event.data.message) {
+                        triggerBroadcast(event.data.message, false);
+                    }
+                }
+            };
+        }
+
+        // Fallback storage listener for cross-tab sync
+        window.addEventListener('storage', (e) => {
+            if (e.key === STORAGE_KEY && e.newValue) {
+                const incoming = JSON.parse(e.newValue);
+                state.personnel = incoming.personnel;
+                state.vehicles = incoming.vehicles;
+                state.logs = incoming.logs;
+                state.duties = incoming.duties;
+                state.adminForceNo = incoming.adminForceNo;
+                refreshAllViews();
+            }
+        });
+
+        function resetToDefaultSystemData() {
+            if (!checkIsAdmin()) {
+                showToast("Only Admin can reset factory data!", "danger");
+                return;
+            }
+            localStorage.removeItem(STORAGE_KEY);
+            state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            state.currentUser = state.personnel.find(p => p.forceNo === state.adminForceNo);
+            persistAndSyncState("System reset to default Nominal Roll & Fleet records.");
+            refreshAllViews();
+            triggerBroadcast("Factory data restored & synced across all sessions.", false);
+        }
 
         /* ==========================================================================
            3. TOAST & REAL-TIME BROADCAST SYSTEM
@@ -1210,7 +1240,7 @@
                 <i class="fa-solid ${iconClass} text-base shrink-0"></i>
                 <div class="flex-1">
                     <p class="font-semibold">${message}</p>
-                    <span class="text-[9px] opacity-70">Instant Device Sync Active</span>
+                    <span class="text-[9px] opacity-70">Real-Time Live Sync Active</span>
                 </div>
             `;
 
@@ -1221,12 +1251,15 @@
             }, 3800);
         }
 
-        function triggerBroadcast(text) {
+        function triggerBroadcast(text, shouldPersist = true) {
             const bar = document.getElementById('broadcast-bar');
             const txt = document.getElementById('broadcast-text');
             txt.innerText = text;
             bar.classList.remove('hidden');
             showToast(text, "success");
+            if (shouldPersist) {
+                persistAndSyncState(text);
+            }
         }
 
         function dismissBroadcast() {
@@ -1279,11 +1312,24 @@
             showToast("Logged out successfully.", "info");
         }
 
+        function refreshAllViews() {
+            updateFilterBadges();
+            populateFormDropdowns();
+            renderDashboard();
+            renderVehiclesList();
+            renderPersonnelList();
+            renderLogsTable();
+            renderDutySection();
+            renderDirectoryList();
+            renderAttachmentsSection();
+        }
+
         function updateUserInterface() {
             const badge = document.getElementById('header-role-badge');
             const btnContainer = document.getElementById('user-profile-btn-container');
             const addVehBtn = document.getElementById('btn-admin-add-veh');
             const addPrsBtn = document.getElementById('btn-admin-add-prs');
+            const headerAdminBtn = document.getElementById('header-admin-btn');
 
             const isAdmin = checkIsAdmin();
 
@@ -1298,17 +1344,20 @@
                 `;
                 if (addVehBtn) addVehBtn.classList.add('hidden');
                 if (addPrsBtn) addPrsBtn.classList.add('hidden');
+                if (headerAdminBtn) headerAdminBtn.classList.add('hidden');
             } else {
                 if (isAdmin) {
                     badge.innerText = "ADMIN MASTER";
                     badge.className = "px-2.5 py-0.5 text-[10px] rounded-full font-black uppercase bg-amber-500 text-slate-950 border border-amber-300 shadow";
                     if (addVehBtn) addVehBtn.classList.remove('hidden');
                     if (addPrsBtn) addPrsBtn.classList.remove('hidden');
+                    if (headerAdminBtn) headerAdminBtn.classList.remove('hidden');
                 } else {
                     badge.innerText = `${state.currentUser.rank}`;
                     badge.className = "px-2 py-0.5 text-[10px] rounded-full font-semibold uppercase bg-sky-950 text-sky-300 border border-sky-800";
                     if (addVehBtn) addVehBtn.classList.add('hidden');
                     if (addPrsBtn) addPrsBtn.classList.add('hidden');
+                    if (headerAdminBtn) headerAdminBtn.classList.add('hidden');
                 }
 
                 btnContainer.innerHTML = `
@@ -1324,12 +1373,33 @@
                 `;
             }
 
-            renderDashboard();
-            renderVehiclesList();
-            renderPersonnelList();
-            renderLogsTable();
-            renderDutySection();
-            populateFormDropdowns();
+            refreshAllViews();
+        }
+
+        function updateFilterBadges() {
+            const vehAllBtn = document.getElementById('veh-filter-all-btn');
+            if (vehAllBtn) vehAllBtn.innerText = `All (${state.vehicles.length})`;
+
+            const prsAllBtn = document.getElementById('prs-filter-all-btn');
+            if (prsAllBtn) prsAllBtn.innerText = `All (${state.personnel.length})`;
+
+            const soCount = state.personnel.filter(p => p.cadre === 'SO').length;
+            const hcCount = state.personnel.filter(p => p.cadre === 'HC_DVR').length;
+            const ctCount = state.personnel.filter(p => p.cadre === 'CT_DVR').length;
+            const wsCount = state.personnel.filter(p => p.cadre === 'WORKSHOP').length;
+
+            const soBtn = document.getElementById('prs-filter-so-btn');
+            const hcBtn = document.getElementById('prs-filter-hc-btn');
+            const ctBtn = document.getElementById('prs-filter-ct-btn');
+            const wsBtn = document.getElementById('prs-filter-ws-btn');
+
+            if (soBtn) soBtn.innerText = `SO's Cadre (${soCount})`;
+            if (hcBtn) hcBtn.innerText = `HC/DVR (${hcCount})`;
+            if (ctBtn) ctBtn.innerText = `CT/DVR (${ctCount})`;
+            if (wsBtn) wsBtn.innerText = `Workshop (${wsCount})`;
+
+            const quickDir = document.getElementById('quick-dir-count');
+            if (quickDir) quickDir.innerText = `${state.personnel.length} Personnel`;
         }
 
         /* ==========================================================================
@@ -1402,29 +1472,30 @@
                 `;
             }
 
-            // Duty Highlights
-            const polHc = state.personnel.find(p => p.forceNo === state.duties.polGuard.hc);
-            const polCts = [state.duties.polGuard.ct1, state.duties.polGuard.ct2, state.duties.polGuard.ct3, state.duties.polGuard.ct4]
-                .map(fno => state.personnel.find(p => p.forceNo === fno)?.name || fno).join(', ');
-
-            document.getElementById('dash-pol-guard-names').innerHTML = `
-                <div><strong class="text-sky-300">HC:</strong> ${polHc ? `${polHc.rank} ${polHc.name}` : 'Not Assigned'}</div>
-                <div class="mt-0.5"><strong class="text-sky-300">CTs (1-4):</strong> ${polCts || 'Not Assigned'}</div>
-            `;
-
+            // Duty Highlight (MT Park Only)
             const mtparkHc = state.personnel.find(p => p.forceNo === state.duties.mtPark.hc);
             const mtparkCt = state.personnel.find(p => p.forceNo === state.duties.mtPark.ct);
 
             document.getElementById('dash-mt-park-names').innerHTML = `
-                <div><strong class="text-amber-300">HC:</strong> ${mtparkHc ? `${mtparkHc.rank} ${mtparkHc.name}` : 'Not Assigned'}</div>
-                <div class="mt-0.5"><strong class="text-amber-300">CT:</strong> ${mtparkCt ? `${mtparkCt.rank} ${mtparkCt.name}` : 'Not Assigned'}</div>
+                <div><strong class="text-amber-300">HC:</strong> ${mtparkHc ? `${mtparkHc.rank} ${mtparkHc.name} (${mtparkHc.forceNo})` : 'Not Assigned'}</div>
+                <div class="mt-1"><strong class="text-amber-300">CT:</strong> ${mtparkCt ? `${mtparkCt.rank} ${mtparkCt.name} (${mtparkCt.forceNo})` : 'Not Assigned'}</div>
             `;
 
-            document.getElementById('dash-attach-prs-summary').innerText = `${stats.prsAttached} personnel currently attached out of GC AGT`;
+            // Dynamic Attachment Summaries
+            const attachedVehs = state.vehicles.filter(v => v.attachment && v.attachment.type !== 'NONE');
+            const attachedPrs = state.personnel.filter(p => p.attachment && p.attachment.type !== 'NONE');
+
+            document.getElementById('dash-attach-veh-summary').innerText = attachedVehs.length > 0
+                ? attachedVehs.map(v => `${v.regNo} (${v.type}) - ${v.attachment.location}`).join('; ')
+                : "No vehicles currently attached outside GC AGT.";
+
+            document.getElementById('dash-attach-prs-summary').innerText = attachedPrs.length > 0
+                ? `${attachedPrs.length} personnel (${attachedPrs.map(p => p.name).join(', ')})`
+                : "No personnel currently attached outside GC AGT.";
         }
 
         /* ==========================================================================
-           6. VEHICLES LIST & ADMIN MANAGEMENT
+           6. VEHICLES LIST & ADMIN MANAGEMENT (ADD / EDIT / DELETE)
            ========================================================================== */
         function filterVehicles(filterType) {
             state.vehFilter = filterType;
@@ -1463,7 +1534,7 @@
 
             const isAdmin = checkIsAdmin();
 
-            container.innerHTML = filtered.map(v => {
+            container.innerHTML = filtered.map((v, idx) => {
                 let statusBadge = "";
                 if (v.status === "AVAILABLE") {
                     statusBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">Available</span>';
@@ -1481,7 +1552,7 @@
                     <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 shadow-sm hover:border-sky-500/50 transition">
                         <div class="flex items-start justify-between cursor-pointer" onclick="openVehicleDetailModal('${v.regNo}')">
                             <div>
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SL ${v.sl} • Model ${v.year}</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SL ${v.sl || idx + 1} • Model ${v.year}</span>
                                 <h3 class="text-base font-black text-white mt-0.5">${v.regNo}</h3>
                                 <p class="text-xs font-semibold text-sky-400">${v.type}</p>
                             </div>
@@ -1490,7 +1561,7 @@
                         <div class="mt-3 pt-2.5 border-t border-slate-700/80 grid grid-cols-2 gap-2 text-xs">
                             <div>
                                 <span class="text-[10px] text-slate-400 block">Odometer Reading:</span>
-                                <strong class="text-slate-200">${v.km.toLocaleString()} KM</strong>
+                                <strong class="text-slate-200">${Number(v.km).toLocaleString()} KM</strong>
                             </div>
                             <div>
                                 <span class="text-[10px] text-slate-400 block">In-Charge:</span>
@@ -1499,10 +1570,10 @@
                         </div>
                         ${isAdmin ? `
                             <div class="mt-2.5 pt-2 border-t border-slate-700/60 flex items-center justify-end gap-2 text-xs">
-                                <button onclick="openEditVehicleModal('${v.regNo}')" class="text-sky-400 hover:text-sky-300 font-semibold px-2 py-1 rounded bg-slate-900 border border-slate-700">
+                                <button onclick="openEditVehicleModal('${v.regNo}')" class="text-sky-400 hover:text-sky-300 font-semibold px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700">
                                     <i class="fa-solid fa-pen-to-square"></i> Edit
                                 </button>
-                                <button onclick="deleteVehicle('${v.regNo}')" class="text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 rounded bg-slate-900 border border-slate-700">
+                                <button onclick="deleteVehicle('${v.regNo}')" class="text-rose-400 hover:text-rose-300 font-semibold px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700">
                                     <i class="fa-solid fa-trash"></i> Delete
                                 </button>
                             </div>
@@ -1524,7 +1595,7 @@
                 <div class="border-b border-slate-700 pb-3 mb-3">
                     <span class="text-[10px] font-bold bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded uppercase">Vehicle Logbook Ledger</span>
                     <h2 class="text-xl font-black text-white mt-1">${v.regNo}</h2>
-                    <p class="text-xs text-slate-400">${v.type} | Model Year: ${v.year} | Fuel: ${v.fuelType}</p>
+                    <p class="text-xs text-slate-400">${v.type} | Model Year: ${v.year} | Fuel: ${v.fuelType || 'Diesel'}</p>
                 </div>
 
                 <div class="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 grid grid-cols-2 gap-3 text-xs mb-4">
@@ -1534,7 +1605,7 @@
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-400 block">Current Odometer:</span>
-                        <strong class="text-sky-400 text-sm font-black">${v.km.toLocaleString()} KM</strong>
+                        <strong class="text-sky-400 text-sm font-black">${Number(v.km).toLocaleString()} KM</strong>
                     </div>
                     <div>
                         <span class="text-[10px] text-slate-400 block">Fleet Status:</span>
@@ -1546,7 +1617,6 @@
                     </div>
                 </div>
 
-                <!-- Admin Status Modifiers -->
                 ${isAdmin ? `
                     <div class="bg-amber-950/40 border border-amber-800/50 p-2.5 rounded-xl text-xs mb-4">
                         <span class="font-bold text-amber-300 block mb-1.5">Admin Quick Status Override:</span>
@@ -1558,7 +1628,6 @@
                     </div>
                 ` : ''}
 
-                <!-- Logbook History -->
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <h4 class="font-bold text-white text-xs flex items-center gap-1.5">
@@ -1593,8 +1662,7 @@
                 v.status = newStatus;
                 triggerBroadcast(`Vehicle ${v.regNo} status updated to '${newStatus}'`);
                 openVehicleDetailModal(regNo);
-                renderDashboard();
-                renderVehiclesList();
+                refreshAllViews();
             }
         }
 
@@ -1637,7 +1705,6 @@
             const inCharge = document.getElementById('admin-veh-incharge').value.trim();
 
             if (origReg) {
-                // Edit existing
                 const v = state.vehicles.find(item => item.regNo === origReg);
                 if (v) {
                     v.regNo = regNo;
@@ -1645,11 +1712,14 @@
                     v.year = year;
                     v.km = km;
                     v.status = status;
-                    v.inCharge = inCharge;
+                    v.inCharge = inCharge || "MT Section";
                     triggerBroadcast(`Vehicle ${regNo} record updated.`);
                 }
             } else {
-                // Add new
+                if (state.vehicles.some(item => item.regNo === regNo)) {
+                    showToast(`Vehicle ${regNo} already exists in the fleet!`, "danger");
+                    return;
+                }
                 const newVeh = {
                     sl: state.vehicles.length + 1,
                     regNo,
@@ -1666,9 +1736,7 @@
             }
 
             closeModal('modal-add-vehicle');
-            renderDashboard();
-            renderVehiclesList();
-            populateFormDropdowns();
+            refreshAllViews();
         }
 
         function deleteVehicle(regNo) {
@@ -1677,14 +1745,13 @@
                 return;
             }
             state.vehicles = state.vehicles.filter(v => v.regNo !== regNo);
+            state.vehicles.forEach((v, idx) => { v.sl = idx + 1; });
             triggerBroadcast(`Vehicle ${regNo} removed from fleet.`);
-            renderDashboard();
-            renderVehiclesList();
-            populateFormDropdowns();
+            refreshAllViews();
         }
 
         /* ==========================================================================
-           7. PERSONNEL LIST & FULL DETAILS (PHOTO UPLOAD, DL & ADMIN CONTROLS)
+           7. PERSONNEL LIST & FULL DETAILS (ADD / EDIT / DELETE / PHOTO)
            ========================================================================== */
         function filterPersonnel(cadreType) {
             state.prsFilter = cadreType;
@@ -1755,7 +1822,7 @@
                                         ${p.name.charAt(0)}
                                     </div>
                                 `}
-                                ${isAdm ? '<span class="absolute -top-1 -right-1 bg-amber-500 text-slate-950 text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow" title="Admin">👑</span>' : ''}
+                                ${isAdm ? '<span class="absolute -top-1 -right-1 bg-amber-500 text-slate-950 text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black shadow" title="Admin">★</span>' : ''}
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between">
@@ -1769,10 +1836,10 @@
                         ${dlBadge}
                         ${isAdmin ? `
                             <div class="mt-2.5 pt-2 border-t border-slate-700/60 flex items-center justify-end gap-2 text-xs">
-                                <button onclick="openEditPersonnelModal('${p.forceNo}')" class="text-sky-400 hover:text-sky-300 font-semibold px-2 py-1 rounded bg-slate-900 border border-slate-700">
+                                <button onclick="openEditPersonnelModal('${p.forceNo}')" class="text-sky-400 hover:text-sky-300 font-semibold px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700">
                                     <i class="fa-solid fa-user-pen"></i> Edit
                                 </button>
-                                <button onclick="deletePersonnel('${p.forceNo}')" class="text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 rounded bg-slate-900 border border-slate-700">
+                                <button onclick="deletePersonnel('${p.forceNo}')" class="text-rose-400 hover:text-rose-300 font-semibold px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700">
                                     <i class="fa-solid fa-trash"></i> Delete
                                 </button>
                             </div>
@@ -1808,7 +1875,6 @@
                     <p class="text-xs font-semibold text-sky-400 mt-0.5">Cadre: ${p.cadre === 'SO' ? "SO's Cadre" : p.cadre}</p>
                 </div>
 
-                <!-- Admin Photo Upload -->
                 ${isAdmin ? `
                     <div class="bg-slate-950 border border-slate-800 p-2.5 rounded-2xl mb-3 text-xs">
                         <span class="font-bold text-amber-300 block mb-1">Admin: Upload / Change Photo</span>
@@ -1816,7 +1882,6 @@
                     </div>
                 ` : ''}
 
-                <!-- Details Grid -->
                 <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 space-y-2 text-xs mb-4">
                     <div class="flex justify-between py-1 border-b border-slate-800">
                         <span class="text-slate-400">Mobile Phone:</span>
@@ -1850,7 +1915,6 @@
                     </div>
                 </div>
 
-                <!-- Admin Status Modifiers -->
                 ${isAdmin ? `
                     <div class="space-y-2 mb-3">
                         <label class="block text-xs font-bold text-slate-300">Admin: Quick Attendance Update</label>
@@ -1862,7 +1926,6 @@
                     </div>
                 ` : ''}
 
-                <!-- Direct Phone Action -->
                 <a href="tel:${p.phone}" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition">
                     <i class="fa-solid fa-phone-volume"></i> Direct Call (${p.phone})
                 </a>
@@ -1895,8 +1958,7 @@
                 p.status = newStatus;
                 triggerBroadcast(`${p.name} status updated to '${newStatus}'`);
                 openPersonnelModal(forceNo);
-                renderPersonnelList();
-                renderDashboard();
+                refreshAllViews();
             }
         }
 
@@ -1904,6 +1966,7 @@
             document.getElementById('modal-prs-title').innerText = "Add New Personnel";
             document.getElementById('admin-prs-orig-force').value = "";
             document.getElementById('admin-prs-form').reset();
+            document.getElementById('admin-prs-cadre').value = "CT_DVR";
             toggleDriverFieldsInForm();
             document.getElementById('modal-add-personnel').classList.remove('hidden');
         }
@@ -1946,11 +2009,11 @@
 
             const origForce = document.getElementById('admin-prs-orig-force').value;
             const forceNo = document.getElementById('admin-prs-force').value.trim();
-            const rank = document.getElementById('admin-prs-rank').value.trim();
+            const rank = document.getElementById('admin-prs-rank').value.trim().toUpperCase();
             const name = document.getElementById('admin-prs-name').value.trim().toUpperCase();
             const cadre = document.getElementById('admin-prs-cadre').value;
             const phone = document.getElementById('admin-prs-phone').value.trim();
-            const dlNo = document.getElementById('admin-prs-dlno').value.trim();
+            const dlNo = document.getElementById('admin-prs-dlno').value.trim().toUpperCase();
             const dlValidity = document.getElementById('admin-prs-dlvalid').value;
             const status = document.getElementById('admin-prs-status').value;
 
@@ -1959,6 +2022,7 @@
             if (origForce) {
                 const p = state.personnel.find(item => item.forceNo === origForce);
                 if (p) {
+                    p.id = forceNo;
                     p.forceNo = forceNo;
                     p.rank = rank;
                     p.name = name;
@@ -1968,9 +2032,16 @@
                     p.dlValidity = isDriver ? dlValidity : '';
                     p.status = status;
                     p.isDriver = isDriver;
+                    if (origForce === state.adminForceNo) {
+                        state.adminForceNo = forceNo;
+                    }
                     triggerBroadcast(`Personnel ${name} profile updated.`);
                 }
             } else {
+                if (state.personnel.some(item => item.forceNo === forceNo)) {
+                    showToast(`Force Number ${forceNo} already exists in Nominal Roll!`, "danger");
+                    return;
+                }
                 const newPrs = {
                     id: forceNo,
                     forceNo,
@@ -1986,14 +2057,11 @@
                     attachment: { type: "NONE", location: "GC AGT" }
                 };
                 state.personnel.push(newPrs);
-                triggerBroadcast(`New personnel ${name} added.`);
+                triggerBroadcast(`New personnel ${rank} ${name} added.`);
             }
 
             closeModal('modal-add-personnel');
-            renderDashboard();
-            renderPersonnelList();
-            renderDirectoryList();
-            populateFormDropdowns();
+            refreshAllViews();
         }
 
         function deletePersonnel(forceNo) {
@@ -2006,16 +2074,22 @@
                 return;
             }
             state.personnel = state.personnel.filter(p => p.forceNo !== forceNo);
-            triggerBroadcast(`Personnel (${forceNo}) removed.`);
-            renderDashboard();
-            renderPersonnelList();
-            renderDirectoryList();
-            populateFormDropdowns();
+            triggerBroadcast(`Personnel (${forceNo}) removed from Nominal Roll.`);
+            refreshAllViews();
         }
 
         /* ==========================================================================
            8. VEHICLE IN / OUT LOGBOOK ENGINE (DRIVER-LOCKED RETURN)
            ========================================================================== */
+        function autoFillOpeningKm() {
+            const regNo = document.getElementById('out-veh-select')?.value;
+            const veh = state.vehicles.find(v => v.regNo === regNo);
+            const kmInput = document.getElementById('out-km-input');
+            if (veh && kmInput) {
+                kmInput.value = veh.km;
+            }
+        }
+
         function handleVehicleOut(e) {
             e.preventDefault();
 
@@ -2060,17 +2134,13 @@
             document.getElementById('vehicle-out-form').reset();
 
             triggerBroadcast(`Vehicle ${veh.regNo} checked out by ${driver.name}.`);
-            renderDashboard();
-            renderVehiclesList();
-            renderLogsTable();
-            populateFormDropdowns();
+            refreshAllViews();
         }
 
         function openCheckInModal(logId) {
             const log = state.logs.find(l => l.id === logId);
             if (!log) return;
 
-            // Driver-locked rule: Only the checkout driver OR Admin can check in
             const isAdmin = checkIsAdmin();
             const isDriver = state.currentUser && (state.currentUser.forceNo === log.driverForceNo);
 
@@ -2121,11 +2191,7 @@
 
             closeModal('modal-vehicle-in');
             triggerBroadcast(`Vehicle ${log.vehRegNo} checked in. Total distance run: ${log.totalKm} KM`);
-
-            renderDashboard();
-            renderVehiclesList();
-            renderLogsTable();
-            populateFormDropdowns();
+            refreshAllViews();
         }
 
         function renderLogsTable() {
@@ -2178,37 +2244,16 @@
         }
 
         /* ==========================================================================
-           9. DUTY ROSTER SYSTEM (POL GUARD & MT PARK)
+           9. DUTY ROSTER SYSTEM (MT PARK ONLY)
            ========================================================================== */
         function renderDutySection() {
             const isAdmin = checkIsAdmin();
-            const polBtn = document.getElementById('pol-guard-save-btn');
             const mtBtn = document.getElementById('mt-park-save-btn');
 
-            if (polBtn) polBtn.disabled = !isAdmin;
-            if (mtBtn) mtBtn.disabled = !isAdmin;
-
-            if (!isAdmin) {
-                if (polBtn) polBtn.innerText = "Admin Rights Required to Modify Roster";
-                if (mtBtn) mtBtn.innerText = "Admin Rights Required to Modify Roster";
-            } else {
-                if (polBtn) polBtn.innerText = "Save Pol Guard Roster";
-                if (mtBtn) mtBtn.innerText = "Save MT Park Roster";
+            if (mtBtn) {
+                mtBtn.disabled = !isAdmin;
+                mtBtn.innerText = isAdmin ? "Save MT Park Roster" : "Admin Rights Required to Modify Roster";
             }
-
-            const polHc = state.personnel.find(p => p.forceNo === state.duties.polGuard.hc);
-            const polCt1 = state.personnel.find(p => p.forceNo === state.duties.polGuard.ct1);
-            const polCt2 = state.personnel.find(p => p.forceNo === state.duties.polGuard.ct2);
-            const polCt3 = state.personnel.find(p => p.forceNo === state.duties.polGuard.ct3);
-            const polCt4 = state.personnel.find(p => p.forceNo === state.duties.polGuard.ct4);
-
-            document.getElementById('pol-active-preview').innerHTML = `
-                <div>• <strong class="text-sky-300">HC:</strong> ${polHc ? `${polHc.rank} ${polHc.name} (${polHc.forceNo})` : 'Unassigned'}</div>
-                <div>• <strong class="text-sky-300">CT 1:</strong> ${polCt1 ? `${polCt1.rank} ${polCt1.name}` : '-'}</div>
-                <div>• <strong class="text-sky-300">CT 2:</strong> ${polCt2 ? `${polCt2.rank} ${polCt2.name}` : '-'}</div>
-                <div>• <strong class="text-sky-300">CT 3:</strong> ${polCt3 ? `${polCt3.rank} ${polCt3.name}` : '-'}</div>
-                <div>• <strong class="text-sky-300">CT 4:</strong> ${polCt4 ? `${polCt4.rank} ${polCt4.name}` : '-'}</div>
-            `;
 
             const mtparkHc = state.personnel.find(p => p.forceNo === state.duties.mtPark.hc);
             const mtparkCt = state.personnel.find(p => p.forceNo === state.duties.mtPark.ct);
@@ -2217,28 +2262,6 @@
                 <div>• <strong class="text-amber-300">HC:</strong> ${mtparkHc ? `${mtparkHc.rank} ${mtparkHc.name} (${mtparkHc.forceNo})` : 'Unassigned'}</div>
                 <div>• <strong class="text-amber-300">CT:</strong> ${mtparkCt ? `${mtparkCt.rank} ${mtparkCt.name} (${mtparkCt.forceNo})` : 'Unassigned'}</div>
             `;
-        }
-
-        function savePolGuardDuty(e) {
-            e.preventDefault();
-            if (!checkIsAdmin()) {
-                showToast("Only Admin can set duties!", "danger");
-                return;
-            }
-
-            state.duties.polGuard = {
-                hc: document.getElementById('pol-hc').value,
-                ct1: document.getElementById('pol-ct-1').value,
-                ct2: document.getElementById('pol-ct-2').value,
-                ct3: document.getElementById('pol-ct-3').value,
-                ct4: document.getElementById('pol-ct-4').value,
-                assignedBy: state.currentUser.name,
-                assignedAt: new Date().toISOString()
-            };
-
-            triggerBroadcast("Pol Guard Duty Roster (1 HC + 4 CT) successfully updated.");
-            renderDutySection();
-            renderDashboard();
         }
 
         function saveMtParkDuty(e) {
@@ -2322,9 +2345,7 @@
                 else if (veh.status === 'ATTACHED_OUT') veh.status = 'AVAILABLE';
 
                 triggerBroadcast(`Vehicle ${veh.regNo} attachment changed to '${type}' (${loc})`);
-                renderDashboard();
-                renderVehiclesList();
-                renderAttachmentsSection();
+                refreshAllViews();
             }
         }
 
@@ -2343,9 +2364,7 @@
             if (p) {
                 p.attachment = { type, location: loc };
                 triggerBroadcast(`Personnel ${p.name} attachment set to '${type}' (${loc})`);
-                renderDashboard();
-                renderPersonnelList();
-                renderAttachmentsSection();
+                refreshAllViews();
             }
         }
 
@@ -2434,8 +2453,6 @@
         async function saveAndSharePDF(doc, filename, shareTitle) {
             try {
                 const pdfBlob = doc.output('blob');
-                
-                // Direct Web Share API (if supported on mobile browsers)
                 if (navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], filename, { type: 'application/pdf' })] })) {
                     const file = new File([pdfBlob], filename, { type: 'application/pdf' });
                     await navigator.share({
@@ -2445,12 +2462,10 @@
                     });
                     showToast("PDF shared successfully!", "success");
                 } else {
-                    // Fallback to direct download/save
                     doc.save(filename);
                     showToast(`PDF saved to device: ${filename}`, "success");
                 }
             } catch (err) {
-                // If sharing was cancelled or blocked, trigger save
                 doc.save(filename);
                 showToast(`PDF saved to device: ${filename}`, "info");
             }
@@ -2471,7 +2486,6 @@
             doc.setTextColor(100);
             doc.text(`Generated on: ${new Date().toLocaleString('en-GB')}`, 14, 31);
 
-            // Summary metrics
             doc.autoTable({
                 startY: 36,
                 head: [['Total Vehicles', 'On Duty', 'Off Road', 'Under CVP', 'Total Personnel', 'Present', 'Leave', 'Course']],
@@ -2483,12 +2497,11 @@
                 headStyles: { fillColor: [11, 25, 44], textColor: 255 }
             });
 
-            // Vehicle Table
             doc.setFontSize(11);
             doc.setTextColor(11, 25, 44);
             doc.text("VEHICLE FLEET SUMMARY", 14, doc.lastAutoTable.finalY + 10);
 
-            const vehRows = state.vehicles.slice(0, 15).map(v => [v.sl, v.regNo, v.type, v.year, `${v.km} KM`, v.status, v.inCharge]);
+            const vehRows = state.vehicles.map(v => [v.sl, v.regNo, v.type, v.year, `${Number(v.km).toLocaleString()} KM`, v.status, v.inCharge]);
             doc.autoTable({
                 startY: doc.lastAutoTable.finalY + 13,
                 head: [['SL', 'Reg No', 'Type', 'Year', 'Odometer', 'Status', 'In-Charge']],
@@ -2509,12 +2522,12 @@
             doc.setFontSize(9);
             doc.text(`Total Vehicles: ${state.vehicles.length} | Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
 
-            const rows = state.vehicles.map(v => [
-                v.sl,
+            const rows = state.vehicles.map((v, idx) => [
+                v.sl || idx + 1,
                 v.regNo,
                 v.type,
                 v.year,
-                `${v.km.toLocaleString()} KM`,
+                `${Number(v.km).toLocaleString()} KM`,
                 v.status,
                 v.inCharge
             ]);
@@ -2595,26 +2608,15 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            const polHc = state.personnel.find(p => p.forceNo === state.duties.polGuard.hc);
-            const polCt1 = state.personnel.find(p => p.forceNo === state.duties.polGuard.ct1);
-            const polCt2 = state.personnel.find(p => p.forceNo === state.duties.polGuard.ct2);
-            const polCt3 = state.personnel.find(p => p.forceNo === state.duties.polGuard.ct3);
-            const polCt4 = state.personnel.find(p => p.forceNo === state.duties.polGuard.ct4);
-
             const mtHc = state.personnel.find(p => p.forceNo === state.duties.mtPark.hc);
             const mtCt = state.personnel.find(p => p.forceNo === state.duties.mtPark.ct);
 
             doc.setFontSize(14);
-            doc.text("MT GROUP CENTRE CRPF AGARTALA - DAILY DUTY ROSTER", 14, 16);
+            doc.text("MT GROUP CENTRE CRPF AGARTALA - DUTY ROSTER", 14, 16);
             doc.setFontSize(10);
             doc.text(`Roster Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 23);
 
             const dutyData = [
-                ['Pol Guard Duty', 'Head Constable', polHc ? `${polHc.rank} ${polHc.name} (${polHc.forceNo})` : 'Unassigned'],
-                ['Pol Guard Duty', 'Constable 1', polCt1 ? `${polCt1.rank} ${polCt1.name} (${polCt1.forceNo})` : '-'],
-                ['Pol Guard Duty', 'Constable 2', polCt2 ? `${polCt2.rank} ${polCt2.name} (${polCt2.forceNo})` : '-'],
-                ['Pol Guard Duty', 'Constable 3', polCt3 ? `${polCt3.rank} ${polCt3.name} (${polCt3.forceNo})` : '-'],
-                ['Pol Guard Duty', 'Constable 4', polCt4 ? `${polCt4.rank} ${polCt4.name} (${polCt4.forceNo})` : '-'],
                 ['MT Park Duty', 'Head Constable', mtHc ? `${mtHc.rank} ${mtHc.name} (${mtHc.forceNo})` : 'Unassigned'],
                 ['MT Park Duty', 'Constable', mtCt ? `${mtCt.rank} ${mtCt.name} (${mtCt.forceNo})` : 'Unassigned']
             ];
@@ -2630,6 +2632,7 @@
             saveAndSharePDF(doc, "MT_GC_AGT_Duty_Roster.pdf", "MT GC AGT Daily Duty Roster");
         }
 
+        // Mobile Directory PDF: Strictly excludes leave/status details
         function exportDirectoryPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -2637,7 +2640,7 @@
             doc.setFontSize(14);
             doc.text("MT GC AGT - PERSONNEL DIRECT TELEPHONE DIRECTORY", 14, 16);
             doc.setFontSize(9);
-            doc.text(`Total Records: ${state.personnel.length}`, 14, 22);
+            doc.text(`Total Contacts: ${state.personnel.length} | Date: ${new Date().toLocaleDateString('en-GB')}`, 14, 22);
 
             const rows = state.personnel.map((p, idx) => [
                 idx + 1,
@@ -2649,13 +2652,13 @@
 
             doc.autoTable({
                 startY: 26,
-                head: [['SL', 'Force No', 'Rank', 'Full Name', 'Phone Number']],
+                head: [['SL', 'Force No', 'Rank', 'Full Name', 'Mobile Number']],
                 body: rows,
                 theme: 'striped',
                 headStyles: { fillColor: [15, 23, 42] }
             });
 
-            saveAndSharePDF(doc, "MT_GC_AGT_Telephone_Directory.pdf", "MT GC AGT Telephone Directory");
+            saveAndSharePDF(doc, "MT_GC_AGT_Mobile_Directory.pdf", "MT GC AGT Mobile Directory");
         }
 
         function exportAttachmentsPDF() {
@@ -2702,7 +2705,7 @@
             doc.setFontSize(14);
             doc.text(`MT GC AGT - VEHICLE LOG SHEET: ${v.regNo}`, 14, 16);
             doc.setFontSize(10);
-            doc.text(`Type: ${v.type} | Model: ${v.year} | In-Charge: ${v.inCharge} | Current KM: ${v.km.toLocaleString()}`, 14, 23);
+            doc.text(`Type: ${v.type} | Model: ${v.year} | In-Charge: ${v.inCharge} | Current KM: ${Number(v.km).toLocaleString()}`, 14, 23);
 
             const rows = logs.map(l => [
                 l.driverName,
@@ -2729,16 +2732,15 @@
            14. FORM SELECTORS POPULATION
            ========================================================================== */
         function populateFormDropdowns() {
-            // Vehicle checkout selector
             const vehSelect = document.getElementById('out-veh-select');
             if (vehSelect) {
                 const availVehs = state.vehicles.filter(v => v.status === "AVAILABLE");
                 vehSelect.innerHTML = availVehs.map(v => `
-                    <option value="${v.regNo}">${v.regNo} - ${v.type} (${v.km.toLocaleString()} KM)</option>
+                    <option value="${v.regNo}">${v.regNo} - ${v.type} (${Number(v.km).toLocaleString()} KM)</option>
                 `).join('') || '<option disabled>No vehicles currently available</option>';
+                autoFillOpeningKm();
             }
 
-            // Driver selector
             const driverSelect = document.getElementById('out-driver-select');
             if (driverSelect) {
                 const drivers = state.personnel.filter(p => p.cadre === 'HC_DVR' || p.cadre === 'CT_DVR' || p.isDriver);
@@ -2747,33 +2749,25 @@
                 `).join('');
             }
 
-            // Duty selectors
             const allHcs = state.personnel.filter(p => p.rank.startsWith('HC') || p.cadre === 'HC_DVR' || p.rank.includes('HC'));
             const allCts = state.personnel.filter(p => p.rank.startsWith('CT') || p.cadre === 'CT_DVR' || p.rank.includes('CT'));
 
-            const polHc = document.getElementById('pol-hc');
             const mtHc = document.getElementById('mtpark-hc');
-            if (polHc && mtHc) {
-                const hcOptions = allHcs.map(h => `<option value="${h.forceNo}">${h.rank} ${h.name} (${h.forceNo})</option>`).join('');
-                polHc.innerHTML = hcOptions;
-                mtHc.innerHTML = hcOptions;
-                polHc.value = state.duties.polGuard.hc;
-                mtHc.value = state.duties.mtPark.hc;
+            if (mtHc) {
+                mtHc.innerHTML = allHcs.map(h => `<option value="${h.forceNo}">${h.rank} ${h.name} (${h.forceNo})</option>`).join('');
+                if (allHcs.some(h => h.forceNo === state.duties.mtPark.hc)) {
+                    mtHc.value = state.duties.mtPark.hc;
+                }
             }
 
-            const ctOptions = allCts.map(c => `<option value="${c.forceNo}">${c.rank} ${c.name} (${c.forceNo})</option>`).join('');
-            ['pol-ct-1', 'pol-ct-2', 'pol-ct-3', 'pol-ct-4', 'mtpark-ct'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = ctOptions;
-            });
+            const mtCt = document.getElementById('mtpark-ct');
+            if (mtCt) {
+                mtCt.innerHTML = allCts.map(c => `<option value="${c.forceNo}">${c.rank} ${c.name} (${c.forceNo})</option>`).join('');
+                if (allCts.some(c => c.forceNo === state.duties.mtPark.ct)) {
+                    mtCt.value = state.duties.mtPark.ct;
+                }
+            }
 
-            if (document.getElementById('pol-ct-1')) document.getElementById('pol-ct-1').value = state.duties.polGuard.ct1;
-            if (document.getElementById('pol-ct-2')) document.getElementById('pol-ct-2').value = state.duties.polGuard.ct2;
-            if (document.getElementById('pol-ct-3')) document.getElementById('pol-ct-3').value = state.duties.polGuard.ct3;
-            if (document.getElementById('pol-ct-4')) document.getElementById('pol-ct-4').value = state.duties.polGuard.ct4;
-            if (document.getElementById('mtpark-ct')) document.getElementById('mtpark-ct').value = state.duties.mtPark.ct;
-
-            // Attachment selectors
             const attachVehSelect = document.getElementById('attach-veh-select');
             if (attachVehSelect) {
                 attachVehSelect.innerHTML = state.vehicles.map(v => `<option value="${v.regNo}">${v.regNo} - ${v.type}</option>`).join('');
@@ -2783,7 +2777,6 @@
                 attachPrsSelect.innerHTML = state.personnel.map(p => `<option value="${p.forceNo}">${p.rank} ${p.name} (${p.forceNo})</option>`).join('');
             }
 
-            // Admin selectors
             const transferSelect = document.getElementById('transfer-admin-select');
             const resetSelect = document.getElementById('reset-prs-select');
             if (transferSelect) {
@@ -2829,22 +2822,12 @@
            16. INITIALIZATION
            ========================================================================== */
         window.addEventListener('DOMContentLoaded', () => {
-            populateFormDropdowns();
-            renderDashboard();
-            renderVehiclesList();
-            renderPersonnelList();
-            renderLogsTable();
-            renderDutySection();
-            renderDirectoryList();
-            renderAttachmentsSection();
-
             // Default logged in as Administrator (Md. Moktar Hussain)
-            state.currentUser = state.personnel.find(p => p.forceNo === state.adminForceNo);
+            state.currentUser = state.personnel.find(p => p.forceNo === state.adminForceNo) || state.personnel[0];
             updateUserInterface();
 
-            showToast("MT GC AGT Application initialized. 48 Personnel and 38 Vehicles ready.", "success");
+            showToast(`MT GC AGT Live Sync Ready. ${state.personnel.length} Personnel & ${state.vehicles.length} Vehicles loaded.`, "success");
         });
     </script>
 </body>
 </html>
-```
