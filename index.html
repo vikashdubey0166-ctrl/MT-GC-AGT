@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0f291e" />
-  <title>MT GC AGT - CRPF Motor Transport Live</title>
+  <meta name="theme-color" content="#0b2518" />
+  <title>MT GC AGT - CRPF Motor Transport</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -36,7 +36,7 @@
     <i data-lucide="bell-ring" class="w-5 h-5 text-amber-400 shrink-0"></i>
     <div class="text-xs">
       <p class="font-bold text-amber-400" id="toastTitle">MT GC AGT Live Update</p>
-      <p id="toastMsg" class="text-slate-200 mt-0.5">Data synchronized across all devices.</p>
+      <p id="toastMsg" class="text-slate-200 mt-0.5">Synchronized across all devices.</p>
     </div>
   </div>
 
@@ -79,7 +79,7 @@
         </button>
       </form>
     </div>
-    <p class="text-emerald-200/70 text-[11px] mt-6">Connected to Firebase: mt-gc-agt-default-rtdb</p>
+    <p class="text-emerald-200/70 text-[11px] mt-6">Live Server: mt-gc-agt-default-rtdb.firebaseio.com</p>
   </div>
 
   <!-- MAIN APP CONTAINER -->
@@ -97,15 +97,20 @@
               <h1 class="font-extrabold text-lg leading-none">MT GC AGT</h1>
               <span id="syncBadge" class="text-[10px] bg-emerald-500/30 text-emerald-200 px-2 py-0.5 rounded-full border border-emerald-400/40 flex items-center gap-1">
                 <span id="syncDot" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                <span id="syncText">CONNECTING...</span>
+                <span id="syncText">SYNCING...</span>
               </span>
             </div>
             <p class="text-[11px] text-emerald-200 mt-0.5" id="loggedUserInfo">Loading...</p>
           </div>
         </div>
-        <button onclick="logout()" class="p-2 bg-white/10 hover:bg-red-500/80 rounded-xl transition" title="Logout">
-          <i data-lucide="log-out" class="w-5 h-5"></i>
-        </button>
+        <div class="flex items-center gap-1.5">
+          <button onclick="manualSyncFromCloud()" class="p-2 bg-white/10 hover:bg-emerald-600 rounded-xl transition" title="Force Sync Now">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </button>
+          <button onclick="logout()" class="p-2 bg-white/10 hover:bg-red-500/80 rounded-xl transition" title="Logout">
+            <i data-lucide="log-out" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -449,89 +454,12 @@
     </div>
   </div>
 
-  <!-- FIREBASE REALTIME DATABASE LIVE SYNC (CONFIGURED FOR mt-gc-agt) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-    const firebaseConfig = {
-      projectId: "mt-gc-agt",
-      databaseURL: "https://mt-gc-agt-default-rtdb.firebaseio.com"
-    };
-
-    window.cloudSyncEnabled = false;
-    let isInitialCloudLoad = true;
-    let lastSeenNotifId = null;
-
-    function updateSyncStatus(connected) {
-      const dot = document.getElementById("syncDot");
-      const text = document.getElementById("syncText");
-      if (!dot || !text) return;
-      if (connected) {
-        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
-        text.innerText = "CLOUD LIVE";
-      } else {
-        dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
-        text.innerText = "LOCAL MODE";
-      }
-    }
-
-    try {
-      const app = initializeApp(firebaseConfig);
-      const db = getDatabase(app);
-      const dbRef = ref(db, 'mt_gc_agt_live_data');
-
-      window.cloudSyncEnabled = true;
-
-      window.pushToCloud = (data) => {
-        set(dbRef, data)
-          .then(() => updateSyncStatus(true))
-          .catch((err) => {
-            console.error("Firebase Write Error:", err);
-            updateSyncStatus(false);
-          });
-      };
-
-      // Check if cloud already has data; if empty, seed initial 49 staff + 38 vehicles
-      get(dbRef).then((snapshot) => {
-        if (!snapshot.exists() && window.getAppState) {
-          set(dbRef, window.getAppState());
-        }
-      }).catch(e => console.warn("Initial cloud check:", e));
-
-      // Real-time listener across all devices
-      onValue(dbRef, (snapshot) => {
-        updateSyncStatus(true);
-        const val = snapshot.val();
-        if (val && window.onCloudUpdate) {
-          // Ensure arrays are intact (Firebase sometimes converts sparse arrays)
-          if (val.personnel && !Array.isArray(val.personnel)) val.personnel = Object.values(val.personnel);
-          if (val.vehicles && !Array.isArray(val.vehicles)) val.vehicles = Object.values(val.vehicles);
-          if (val.gateLogs && !Array.isArray(val.gateLogs)) val.gateLogs = Object.values(val.gateLogs);
-          if (val.duties && !Array.isArray(val.duties)) val.duties = Object.values(val.duties);
-          if (val.documents && !Array.isArray(val.documents)) val.documents = Object.values(val.documents);
-
-          const shouldNotify = !isInitialCloudLoad && val.lastNotification && val.lastNotification.id !== lastSeenNotifId;
-          if (val.lastNotification) lastSeenNotifId = val.lastNotification.id;
-          isInitialCloudLoad = false;
-
-          window.onCloudUpdate(val, shouldNotify);
-        }
-      }, (error) => {
-        console.error("Firebase Sync Error:", error);
-        updateSyncStatus(false);
-      });
-
-    } catch (e) {
-      console.warn("Firebase init fallback:", e);
-      updateSyncStatus(false);
-    }
-  </script>
-
   <script>
     // ==========================================
     // 1. INITIAL PRE-LOADED DATA (49 STAFF & 38 VEHICLES)
     // ==========================================
+    const FIREBASE_RTDB_URL = "https://mt-gc-agt-default-rtdb.firebaseio.com/mt_gc_agt_live.json";
+
     const INITIAL_PERSONNEL = [
       { forceNo: "900440064", rank: "INSP/MT", name: "MD. MOKTAR HUSSAIN", mobile: "9911439132", status: "PRESENT", attachment: "", dlNo: "", dlValid: "", photo: "" },
       { forceNo: "900991221", rank: "SI/MM", name: "EDLAPALLI HARINATH", mobile: "7889915950", status: "PRESENT", attachment: "", dlNo: "", dlValid: "", photo: "" },
@@ -626,9 +554,12 @@
     ];
 
     // ==========================================
-    // 2. APPLICATION STATE & LIVE SYNC ENGINE
+    // 2. APPLICATION STATE & FIREBASE REST AUTO-SYNC
     // ==========================================
-    const STORAGE_KEY = "MT_GC_AGT_DB_LIVE_V2";
+    const STORAGE_KEY = "MT_GC_AGT_DB_FINAL";
+    let lastNotifId = null;
+    let isSyncing = false;
+
     let appState = {
       adminForceNo: "165060166", // Default Admin: Vikash Dubey
       passwords: {},
@@ -640,70 +571,122 @@
       lastNotification: null
     };
 
-    window.getAppState = () => appState;
+    function updateSyncBadge(online) {
+      const dot = document.getElementById("syncDot");
+      const text = document.getElementById("syncText");
+      if (!dot || !text) return;
+      if (online) {
+        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+        text.innerText = "FIREBASE LIVE";
+      } else {
+        dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
+        text.innerText = "OFFLINE CACHE";
+      }
+    }
 
-    function loadState() {
+    function normalizeState(raw) {
+      const pList = Array.isArray(raw.personnel) ? raw.personnel : (raw.personnel ? Object.values(raw.personnel) : INITIAL_PERSONNEL);
+      const vList = Array.isArray(raw.vehicles) ? raw.vehicles : (raw.vehicles ? Object.values(raw.vehicles) : INITIAL_VEHICLES);
+      const gList = Array.isArray(raw.gateLogs) ? raw.gateLogs : (raw.gateLogs ? Object.values(raw.gateLogs) : []);
+      const dList = Array.isArray(raw.duties) ? raw.duties : (raw.duties ? Object.values(raw.duties) : []);
+      const docList = Array.isArray(raw.documents) ? raw.documents : (raw.documents ? Object.values(raw.documents) : []);
+
+      const state = {
+        adminForceNo: raw.adminForceNo || "165060166",
+        passwords: raw.passwords || {},
+        personnel: pList,
+        vehicles: vList,
+        gateLogs: gList,
+        duties: dList,
+        documents: docList,
+        lastNotification: raw.lastNotification || null
+      };
+
+      state.personnel.forEach(p => {
+        if (!state.passwords[p.forceNo]) state.passwords[p.forceNo] = "Mt@" + p.forceNo;
+      });
+      return state;
+    }
+
+    function loadLocalState() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
-          const parsed = JSON.parse(saved);
-          appState = {
-            adminForceNo: parsed.adminForceNo || "165060166",
-            passwords: parsed.passwords || {},
-            personnel: parsed.personnel || INITIAL_PERSONNEL,
-            vehicles: parsed.vehicles || INITIAL_VEHICLES,
-            gateLogs: parsed.gateLogs || [],
-            duties: parsed.duties || [],
-            documents: parsed.documents || [],
-            lastNotification: parsed.lastNotification || null
-          };
+          appState = normalizeState(JSON.parse(saved));
         } catch (e) {
-          console.error("State parse error:", e);
+          console.error("Local cache parse error", e);
         }
       }
-      appState.personnel.forEach(p => {
-        if (!appState.passwords[p.forceNo]) {
-          appState.passwords[p.forceNo] = "Mt@" + p.forceNo;
+      appState = normalizeState(appState);
+    }
+
+    async function pushToFirebase(stateToPush) {
+      try {
+        const res = await fetch(FIREBASE_RTDB_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stateToPush)
+        });
+        if (res.ok) updateSyncBadge(true);
+        else updateSyncBadge(false);
+      } catch (err) {
+        updateSyncBadge(false);
+      }
+    }
+
+    async function pullFromFirebase(isFirstLoad = false) {
+      if (isSyncing) return;
+      isSyncing = true;
+      try {
+        const res = await fetch(FIREBASE_RTDB_URL + "?t=" + Date.now());
+        if (res.ok) {
+          const data = await res.json();
+          updateSyncBadge(true);
+          if (data && data.personnel) {
+            const incoming = normalizeState(data);
+            const hasNewNotif = !isFirstLoad && incoming.lastNotification && incoming.lastNotification.id !== lastNotifId;
+            if (incoming.lastNotification) lastNotifId = incoming.lastNotification.id;
+
+            appState = incoming;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            if (hasNewNotif) {
+              showToast("MT GC AGT Live Alert", incoming.lastNotification.msg);
+            }
+            if (currentUser) refreshUI();
+          } else if (isFirstLoad) {
+            // Seed Firebase if completely empty
+            await pushToFirebase(appState);
+          }
+        } else {
+          updateSyncBadge(false);
         }
-      });
+      } catch (err) {
+        updateSyncBadge(false);
+      } finally {
+        isSyncing = false;
+      }
+    }
+
+    function manualSyncFromCloud() {
+      pullFromFirebase(false);
+      showToast("Syncing...", "Fetching latest live data from server");
     }
 
     function saveState(notifyMsg = null) {
       if (notifyMsg) {
-        appState.lastNotification = {
+        const notifObj = {
           msg: notifyMsg,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           id: Date.now()
         };
+        appState.lastNotification = notifObj;
+        lastNotifId = notifObj.id;
         showToast("MT GC AGT Update", notifyMsg);
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-      if (window.cloudSyncEnabled && window.pushToCloud) {
-        window.pushToCloud(appState);
-      }
+      pushToFirebase(appState);
       refreshUI();
     }
-
-    window.onCloudUpdate = (cloudData, shouldNotify) => {
-      appState = {
-        adminForceNo: cloudData.adminForceNo || "165060166",
-        passwords: cloudData.passwords || {},
-        personnel: cloudData.personnel || INITIAL_PERSONNEL,
-        vehicles: cloudData.vehicles || INITIAL_VEHICLES,
-        gateLogs: cloudData.gateLogs || [],
-        duties: cloudData.duties || [],
-        documents: cloudData.documents || [],
-        lastNotification: cloudData.lastNotification || null
-      };
-      appState.personnel.forEach(p => {
-        if (!appState.passwords[p.forceNo]) appState.passwords[p.forceNo] = "Mt@" + p.forceNo;
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-      if (shouldNotify && appState.lastNotification) {
-        showToast("Live Sync Alert", appState.lastNotification.msg);
-      }
-      refreshUI();
-    };
 
     function showToast(title, msg) {
       const toast = document.getElementById("liveToast");
@@ -1094,13 +1077,13 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement("canvas");
-          canvas.width = 160;
-          canvas.height = 160;
+          canvas.width = 150;
+          canvas.height = 150;
           const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, 160, 160);
+          ctx.drawImage(img, 0, 0, 150, 150);
           const p = appState.personnel.find(x => x.forceNo === forceNo);
           if (p) {
-            p.photo = canvas.toDataURL("image/jpeg", 0.72);
+            p.photo = canvas.toDataURL("image/jpeg", 0.70);
             saveState(`Photo updated for ${p.name}`);
             openPersonnelDetail(forceNo);
           }
@@ -1409,8 +1392,8 @@
         return;
       }
 
-      if (file.size > 4 * 1024 * 1024) {
-        alert("Please select a file smaller than 4 MB for fast live sync across all mobiles.");
+      if (file.size > 3 * 1024 * 1024) {
+        alert("Please select a file smaller than 3 MB for instant sync across all mobiles.");
         return;
       }
 
@@ -1582,8 +1565,11 @@
       document.getElementById(id).classList.add("hidden");
     }
 
-    // Boot Application
-    loadState();
+    // Boot Application & Start Auto-Sync Polling every 5 seconds
+    loadLocalState();
+    pullFromFirebase(true);
+    setInterval(() => pullFromFirebase(false), 5000);
+
     lucide.createIcons();
     const savedSession = sessionStorage.getItem("MT_GC_AGT_USER");
     if (savedSession) {
